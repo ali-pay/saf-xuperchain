@@ -48,6 +48,7 @@ type RootConfig struct {
 	ForbiddenContract InvokeRequest `json:"forbidden_contract"`
 	// NewAccountResourceAmount the amount of creating a new contract account
 	NewAccountResourceAmount int64 `json:"new_account_resource_amount"`
+	TransferFeeAmount        int64 `json:"transfer_fee_amount"` //转账手续费
 	// IrreversibleSlideWindow
 	IrreversibleSlideWindow string `json:"irreversibleslidewindow"`
 	// GroupChainContract
@@ -103,6 +104,10 @@ func (rc *RootConfig) GetMaxBlockSizeInByte() (n int64) {
 // GetNewAccountResourceAmount get the resource amount of new an account
 func (rc *RootConfig) GetNewAccountResourceAmount() int64 {
 	return rc.NewAccountResourceAmount
+}
+
+func (rc *RootConfig) GetTransferFeeAmount() int64 {
+	return rc.TransferFeeAmount
 }
 
 // GetGenesisConsensus get consensus config of genesis block
@@ -200,6 +205,25 @@ func (gb *GenesisBlock) CalcAward(blockHeight int64) *big.Int {
 	N := int64(math.Round(realAward)) //四舍五入
 	award.SetInt64(N)
 	gb.awardCache.Add(period, award)
+	return award
+}
+
+//计算投票奖励
+func (gb *GenesisBlock) CalcVoteAward(voteAward int64, ratio float64) *big.Int {
+	award := big.NewInt(0)
+	if voteAward == 0 || ratio == 0 {
+		return award
+	}
+
+	if awardRemember, ok := gb.awardCache.Get(ratio); ok {
+		return awardRemember.(*big.Int) //加个记忆，避免每次都重新算
+	}
+
+	//奖励*票数占比
+	realAward := float64(voteAward) * ratio
+	N := int64(math.Floor(realAward)) //向下取整
+	award.SetInt64(N)
+	gb.awardCache.Add(ratio, award)
 	return award
 }
 

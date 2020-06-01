@@ -24,6 +24,8 @@ var (
 	ErrProposeBlockMoreThanConfig = errors.New("Propose block more than config num error")
 )
 
+var VoteAward int64 = 0 //投票奖励总额
+
 const (
 	// TYPE the type of tdpos
 	TYPE = "tdpos"

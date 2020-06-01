@@ -60,7 +60,7 @@ func (uv *UtxoVM) verifyDAGTxs(txs []*pb.Transaction, isRootTx bool, unconfirmTo
 			if !uv.verifyAutogenTx(tx) {
 				return ErrInvalidAutogenTx
 			}
-			if !tx.Autogen && !tx.Coinbase {
+			if !tx.Autogen && !tx.Coinbase && !tx.VoteCoinbase {
 				if ok, err := uv.ImmediateVerifyTx(tx, isRootTx); !ok {
 					uv.xlog.Warn("dotx failed to ImmediateVerifyTx", "txid", fmt.Sprintf("%x", tx.Txid), "err", err)
 					ok, isRelyOnMarkedTx, err := uv.verifyMarked(tx)

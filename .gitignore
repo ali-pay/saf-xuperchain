@@ -3,7 +3,7 @@ core/plugins/
 core/output/
 core/xvm/compile/wabt/build/
 core/contractsdk/cpp/build
-output
+output*
 event_client
 
 # Compiled source
@@ -35,10 +35,12 @@ event_client
 *.log.wf
 
 
-vendor
-front
-visual
-.github
+vendor/
+front/
+visual/
+cc/
+.github/
 CONTRIBUTING.md
 CONTRIBUTING_CN.md
 LICENSE
+wasm2c

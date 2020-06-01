@@ -26,6 +26,8 @@ type UtxoMetaRegister interface {
 	UpdateForbiddenContract(*pb.InvokeRequest, kvdb.Batch) error
 	GetNewAccountResourceAmount() int64
 	UpdateNewAccountResourceAmount(int64, kvdb.Batch) error
+	GetTransferFeeAmount() int64                     //获取转账手续费
+	UpdateTransferFeeAmount(int64, kvdb.Batch) error //更新转账手续费
 	QueryTx(txid []byte) (*pb.Transaction, error)
 	GetXModel() *xmodel.XModel
 	// Get irreversible slide window

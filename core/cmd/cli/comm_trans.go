@@ -533,6 +533,16 @@ func (c *CommTrans) postTx(ctx context.Context, tx *pb.Transaction) (string, err
 
 // GenerateMultisigGenRawTx for mulitisig gen cmd
 func (c *CommTrans) GenerateMultisigGenRawTx(ctx context.Context) error {
+
+	//不可转账给别人
+	from, err := c.genInitiator()
+	if err != nil {
+		return err
+	}
+	if c.To != "" && c.To != from {
+		return errors.New("only transfer to your safe")
+	}
+
 	tx, err := c.GenerateTx(ctx)
 	if err != nil {
 		return err

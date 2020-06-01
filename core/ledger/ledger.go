@@ -57,6 +57,7 @@ const (
 	ReservedContractsKey        = "ReservedContracts"
 	ForbiddenContractKey        = "ForbiddenContract"
 	NewAccountResourceAmountKey = "NewAccountResourceAmount"
+	TransferFeeAmountKey        = "TransferFeeAmount"
 	// Irreversible block height & slide window
 	IrreversibleBlockHeightKey = "IrreversibleBlockHeight"
 	IrreversibleSlideWindowKey = "IrreversibleSlideWindow"
@@ -975,6 +976,11 @@ func (l *Ledger) GetMaxBlockSize() int64 {
 func (l *Ledger) GetNewAccountResourceAmount() int64 {
 	defaultNewAccountResourceAmount := l.GenesisBlock.GetConfig().GetNewAccountResourceAmount()
 	return defaultNewAccountResourceAmount
+}
+
+func (l *Ledger) GetTransferFeeAmount() int64 {
+	defaultTransferFeeAmount := l.GenesisBlock.GetConfig().GetTransferFeeAmount()
+	return defaultTransferFeeAmount
 }
 
 func (l *Ledger) GetReservedContracts() ([]*pb.InvokeRequest, error) {

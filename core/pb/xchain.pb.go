@@ -1369,6 +1369,8 @@ type Transaction struct {
 	Desc []byte `protobuf:"bytes,6,opt,name=desc,proto3" json:"desc,omitempty"`
 	// Mining rewards
 	Coinbase bool `protobuf:"varint,7,opt,name=coinbase" json:"coinbase,omitempty"`
+	//投票奖励
+	VoteCoinbase bool `protobuf:"varint,99,opt,name=vote_coinbase" json:"vote_coinbase,omitempty"`
 	// Random number used to avoid replay attacks
 	Nonce string `protobuf:"bytes,8,opt,name=nonce" json:"nonce,omitempty"`
 	// Timestamp to launch the transaction
@@ -1464,6 +1466,13 @@ func (m *Transaction) GetDesc() []byte {
 func (m *Transaction) GetCoinbase() bool {
 	if m != nil {
 		return m.Coinbase
+	}
+	return false
+}
+
+func (m *Transaction) GetVoteCoinbase() bool {
+	if m != nil {
+		return m.VoteCoinbase
 	}
 	return false
 }
@@ -1642,6 +1651,7 @@ type UtxoMeta struct {
 	ReservedContracts        []*InvokeRequest `protobuf:"bytes,7,rep,name=reserved_contracts,json=reservedContracts" json:"reserved_contracts,omitempty"`
 	ForbiddenContract        *InvokeRequest   `protobuf:"bytes,8,opt,name=forbidden_contract,json=forbiddenContract" json:"forbidden_contract,omitempty"`
 	NewAccountResourceAmount int64            `protobuf:"varint,9,opt,name=new_account_resource_amount,json=newAccountResourceAmount" json:"new_account_resource_amount,omitempty"`
+	TransferFeeAmount        int64            `protobuf:"varint,99,opt,name=transfer_fee_amount,json=transferFeeAmount" json:"transfer_fee_amount,omitempty"`
 	IrreversibleBlockHeight  int64            `protobuf:"varint,10,opt,name=irreversibleBlockHeight" json:"irreversibleBlockHeight,omitempty"`
 	IrreversibleSlideWindow  int64            `protobuf:"varint,11,opt,name=irreversibleSlideWindow" json:"irreversibleSlideWindow,omitempty"`
 	GasPrice                 *GasPrice        `protobuf:"bytes,12,opt,name=gasPrice" json:"gasPrice,omitempty"`
@@ -1734,6 +1744,13 @@ func (m *UtxoMeta) GetForbiddenContract() *InvokeRequest {
 func (m *UtxoMeta) GetNewAccountResourceAmount() int64 {
 	if m != nil {
 		return m.NewAccountResourceAmount
+	}
+	return 0
+}
+
+func (m *UtxoMeta) GetTransferFeeAmount() int64 {
+	if m != nil {
+		return m.TransferFeeAmount
 	}
 	return 0
 }

@@ -306,6 +306,9 @@ func (prp *Proposal) fillOldState(desc []byte) ([]byte, error) {
 	case "kernel.UpdateNewAccountResourceAmount":
 		prp.log.Trace("contract desc need to process", "contractKey", "kernel.UpdateNewAccountResourceAmount")
 		descObj.Args["old_new_account_resource_amount"] = prp.utxoVM.GetNewAccountResourceAmount()
+	case "kernel.UpdateTransferFeeAmount":
+		prp.log.Trace("contract desc need to process", "contractKey", "kernel.UpdateTransferFeeAmount")
+		descObj.Args["old_transfer_fee_amount"] = prp.utxoVM.GetTransferFeeAmount()
 	case "kernel.UpdateIrreversibleSlideWindow":
 		prp.log.Trace("contract desc need to process", "contractKey", "kernel.UpdateIrreversibleSlideWindow")
 		descObj.Args["old_irreversible_slide_window"] = prp.utxoVM.GetIrreversibleSlideWindow()

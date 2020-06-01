@@ -534,6 +534,8 @@ func (k *Kernel) Run(desc *contract.TxDesc) error {
 		return k.runUpdateBlockChainData(desc)
 	case "UpdateNewAccountResourceAmount":
 		return k.runUpdateNewAccountResourceAmount(desc)
+	case "UpdateTransferFeeAmount":
+		return k.runUpdateTransferFeeAmount(desc)
 	case "UpdateIrreversibleSlideWindow":
 		return k.runUpdateIrreversibleSlideWindow(desc)
 	case "UpdateGasPrice":
@@ -576,6 +578,8 @@ func (k *Kernel) Rollback(desc *contract.TxDesc) error {
 		return k.rollbackUpdateBlockChainData(desc)
 	case "UpdateNewAccountResourceAmount":
 		return k.rollbackUpdateNewAccountResourceAmount(desc)
+	case "UpdateTransferFeeAmount":
+		return k.rollbackUpdateTransferFeeAmount(desc)
 	case "UpdateIrreversibleSlideWindow":
 		return k.rollbackUpdateIrreversibleSlideWindow(desc)
 	case "UpdateGasPrice":
@@ -584,6 +588,55 @@ func (k *Kernel) Rollback(desc *contract.TxDesc) error {
 		k.log.Warn("method not implemented", "method", desc.Method)
 		return ErrMethodNotImplemented
 	}
+}
+
+//参数校验
+func (k *Kernel) validateUpdateTransferFeeAmount(desc *contract.TxDesc) error {
+	for _, argName := range []string{"new_transfer_fee_amount", "old_transfer_fee_amount"} {
+		//不存在新旧2个字段
+		if desc.Args[argName] == nil {
+			return fmt.Errorf("miss argument in contract: %s", argName)
+		}
+		//2个字段的值不是数字
+		if _, ok := desc.Args[argName].(float64); !ok {
+			return fmt.Errorf("invalid arg type: %s, %v", argName, reflect.TypeOf(desc.Args[argName]))
+		}
+	}
+	return nil
+}
+
+//更新转账手续费
+func (k *Kernel) runUpdateTransferFeeAmount(desc *contract.TxDesc) error {
+	if k.context == nil || k.context.LedgerObj == nil {
+		return fmt.Errorf("failed to update transferFeeAmount, because no ledger object in context")
+	}
+	vErr := k.validateUpdateTransferFeeAmount(desc)
+	if vErr != nil {
+		return vErr
+	}
+	newTransferFeeAmount := int64(desc.Args["new_transfer_fee_amount"].(float64))
+	oldTransferFeeAmount := int64(desc.Args["old_transfer_fee_amount"].(float64))
+	k.log.Info("update transferFeeAmount", "old", oldTransferFeeAmount, "new", newTransferFeeAmount)
+	curTransferFeeAmount := k.context.UtxoMeta.GetTransferFeeAmount()
+	if oldTransferFeeAmount != curTransferFeeAmount {
+		fmt.Errorf("unexpected old transferFeeAmount, got %v, expected: %v", oldTransferFeeAmount, curTransferFeeAmount)
+	}
+	err := k.context.UtxoMeta.UpdateTransferFeeAmount(newTransferFeeAmount, k.context.UtxoBatch)
+	return err
+}
+
+//失败时回滚
+func (k *Kernel) rollbackUpdateTransferFeeAmount(desc *contract.TxDesc) error {
+	if k.context == nil || k.context.LedgerObj == nil {
+		return fmt.Errorf("failed to update transferFeeAmount, because no ledger object in context")
+	}
+	vErr := k.validateUpdateTransferFeeAmount(desc)
+	if vErr != nil {
+		return vErr
+	}
+	oldTransferFeeAmount := int64(desc.Args["old_transfer_fee_amount"].(float64))
+	err := k.context.UtxoMeta.UpdateTransferFeeAmount(oldTransferFeeAmount, k.context.UtxoBatch)
+	return err
 }
 
 func (k *Kernel) runUpdateMaxBlockSize(desc *contract.TxDesc) error {

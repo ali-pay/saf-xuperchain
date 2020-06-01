@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -378,6 +379,67 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 		Initiator:   initAddr,
 		AuthRequire: tx.AuthRequire,
 	}
+
+	//通过desc的内容来判断是否为转账操作
+	if string(opt.Desc) == "transfer from console" {
+		preExeRPCReq.Requests = append(preExeRPCReq.Requests, &pb.InvokeRequest{
+			ModuleName: "transfer",
+			Amount:     opt.Fee,
+		})
+
+	} else { //其他操作处理
+
+		//读取desc的内容
+		desc := new(descWraper)
+		err := json.Unmarshal(opt.Desc, desc)
+		if err != nil {
+			return nil, err
+		}
+
+		//拦截不应该由transfer发起的请求
+		switch desc.Module {
+		case "xkernel", "wasm", "native":
+			return nil, errors.New("desc is invalid")
+		}
+
+		//创建平行链时的链名
+		var bcname string
+		name, ok := desc.Args["name"]
+		if ok {
+			bcname = name.(string)
+		}
+
+		//只能转账给自己和平行链
+		if initAddr != opt.To && opt.To != bcname {
+			return nil, errors.New("only transfer to your safe")
+		}
+
+		//允许的请求列表
+		modules := map[string][]string{
+			"tdpos":    {"nominate_candidate", "vote"},
+			"proposal": {"Propose", "Thaw"},
+			"kernel":   {"CreateBlockChain"},
+		}
+
+	allow:
+		for module, methods := range modules {
+			for _, method := range methods {
+				if module == desc.Module && method == desc.Method {
+					//构造请求
+					preExeRPCReq.Requests = append(preExeRPCReq.Requests, &pb.InvokeRequest{
+						ModuleName: module,
+						Args: map[string][]byte{
+							"to":     []byte(opt.To), //收款人地址
+							"bcname": []byte(bcname), //平行链名
+						},
+					})
+					break allow
+				}
+			}
+		}
+	}
+
+	fmt.Println(preExeRPCReq.Requests[0].Args)
 
 	preExeRes, err := client.PreExec(ctx, preExeRPCReq)
 	if err != nil {

@@ -20,15 +20,17 @@
         "xfee_rate": 1
     },
     "new_account_resource_amount": 1000,
+    "transfer_fee_amount": 1000,
     "genesis_consensus": {
         "name": "tdpos",
         "config": {
+            "vote_award": "300",
             "timestamp": "1559021720000000000",
             "proposer_num": "1",
             "period": "3000",
             "alternate_interval": "3000",
             "term_interval": "6000",
-            "block_num": "20",
+            "block_num": "5",
             "vote_unit_price": "1",
             "init_proposer": {
                 "1": [
@@ -41,5 +43,11 @@
                 ]
             }
         }
+    }
+    , "group_chain_contract": {
+        "module_name": "wasm",
+        "contract_name": "group_chain",
+        "method_name": "list",
+        "args":{}
     }
 }

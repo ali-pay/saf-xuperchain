@@ -666,6 +666,20 @@ func (xc *XChainCore) doMiner() {
 	awardtx, err := xc.Utxovm.GenerateAwardTx(xc.address, blockAward.String(), []byte{'1'})
 	minerTimer.Mark("GenAwardTx")
 	txs = append(txs, awardtx)
+
+	//4. 插入投票奖励
+	//if xc.con.IsTdpos() {
+	if xc.GetConsType() == consensus.ConsensusTypeTdpos {
+		voteTxs, err := xc.GenerateVoteAward()
+		if err != nil {
+			xc.log.Error("[Vote_Award] fail to generate vote award", "logid", header.Logid, "err", err)
+			return
+		}
+		txs = append(txs, voteTxs...)
+		//标记完成，统计时间
+		minerTimer.Mark("GenVoteAwardTx")
+	}
+
 	freshBlock, err = xc.Ledger.FormatMinerBlock(txs, xc.address, xc.privateKey,
 		t.UnixNano(), curTerm, curBlockNum, xc.Utxovm.GetLatestBlockid(), targetBits,
 		xc.Utxovm.GetTotal(), qc, fakeBlock.FailedTxs, xc.Ledger.GetMeta().TrunkHeight+1)

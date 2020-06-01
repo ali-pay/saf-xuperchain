@@ -516,3 +516,13 @@ func (pc *PluggableConsensus) GetStatus() *cons_base.ConsensusStatus {
 	currentConsIndex := len(pc.cons) - 1
 	return pc.cons[currentConsIndex].Conn.GetStatus()
 }
+
+//判断当前是否使用tdpos共识
+func (pc *PluggableConsensus) IsTdpos() bool {
+	for _, con := range pc.cons {
+		if con.Conn.Type() == ConsensusTypeTdpos && con.Conn.IsActive() {
+			return true
+		}
+	}
+	return false
+}

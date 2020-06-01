@@ -182,6 +182,21 @@ func (tp *TDpos) buildConfigs(xlog log.Logger, cfg *config.NodeConfig, consCfg m
 		tp.version = version
 	}
 
+	//投票奖励
+	if consCfg["vote_award"] == nil {
+		return errors.New("Parse TDpos vote_award error, can not be null")
+	}
+	var err error
+	VoteAward, err = strconv.ParseInt(consCfg["vote_award"].(string), 10, 64)
+	if err != nil {
+		xlog.Error("Parse TDpos config vote_award error", "error", err.Error())
+		return err
+	}
+	if VoteAward < 0 {
+		xlog.Error("Parse TDpos config vote_award error", "error", "vote_award Cannot be less than 0")
+		return errors.New("vote_award Cannot be less than 0")
+	}
+
 	proposerNum, err := strconv.ParseInt(consCfg["proposer_num"].(string), 10, 64)
 	if err != nil {
 		xlog.Warn("Parse TDpos config error", "error", err.Error())

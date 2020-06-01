@@ -134,6 +134,7 @@ type Transaction struct {
 	Version           int32            `json:"version"`
 	Autogen           bool             `json:"autogen"`
 	Coinbase          bool             `json:"coinbase"`
+	VoteCoinbase      bool             `json:"voteCoinbase"`
 	TxInputsExt       []TxInputExt     `json:"txInputsExt"`
 	TxOutputsExt      []TxOutputExt    `json:"txOutputsExt"`
 	ContractRequests  []*InvokeRequest `json:"contractRequests"`
@@ -178,6 +179,7 @@ func FromPBTx(tx *pb.Transaction) *Transaction {
 		Desc:              string(tx.Desc),
 		Autogen:           tx.Autogen,
 		Coinbase:          tx.Coinbase,
+		VoteCoinbase:      tx.VoteCoinbase,
 		Initiator:         tx.Initiator,
 		ReceivedTimestamp: tx.ReceivedTimestamp,
 	}
@@ -365,6 +367,7 @@ type UtxoMeta struct {
 	ForbiddenContract InvokeRequest `json:"forbiddenContract"`
 	// NewAccountResourceAmount resource amount of creating an account
 	NewAccountResourceAmount int64 `json:"newAccountResourceAmount"`
+	TransferFeeAmount        int64 `json:"transfer_fee_amount,omitempty"`
 	// IrreversibleBlockHeight irreversible block height
 	IrreversibleBlockHeight int64 `json:"irreversibleBlockHeight"`
 	// IrreversibleSlideWindow irreversible slide window
@@ -450,6 +453,7 @@ func FromSystemStatusPB(statuspb *pb.SystemsStatus) *SystemStatus {
 				UnconfirmTxAmount:        utxoMeta.GetUnconfirmTxAmount(),
 				MaxBlockSize:             utxoMeta.GetMaxBlockSize(),
 				NewAccountResourceAmount: utxoMeta.GetNewAccountResourceAmount(),
+				TransferFeeAmount:        utxoMeta.GetTransferFeeAmount(),
 				ReservedContracts:        rcs,
 				ForbiddenContract:        forbiddenContractMap,
 				// Irreversible block height & slide window

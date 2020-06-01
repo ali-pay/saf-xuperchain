@@ -274,6 +274,10 @@ func (uv *UtxoVM) checkInputEqualOutput(tx *pb.Transaction) error {
 		// coinbase交易，输入输出不必相等, 特殊处理
 		return nil
 	}
+	if inputSum.Cmp(big.NewInt(0)) == 0 && tx.VoteCoinbase {
+		// coinbase交易，输入输出不必相等, 特殊处理
+		return nil
+	}
 	uv.xlog.Warn("input != output", "inputSum", inputSum, "outputSum", outputSum)
 	return ErrInputOutputNotEqual
 }
@@ -499,6 +503,12 @@ func MakeUtxoVM(bcname string, ledger *ledger_pkg.Ledger, storePath string, priv
 		xlog.Warn("failed to load newAccountResourceAmount from disk", "loadErr", loadErr)
 		return nil, loadErr
 	}
+	//加载转账手续费
+	utxoVM.meta.TransferFeeAmount, loadErr = utxoVM.LoadTransferFeeAmount()
+	if loadErr != nil {
+		xlog.Warn("failed to load transferFeeAmount from disk", "loadErr", loadErr)
+		return nil, loadErr
+	}
 	// load irreversible block height & slide window parameters
 	utxoVM.meta.IrreversibleBlockHeight, loadErr = utxoVM.LoadIrreversibleBlockHeight()
 	if loadErr != nil {
@@ -605,6 +615,25 @@ func (uv *UtxoVM) GenerateAwardTx(address []byte, awardAmount string, desc []byt
 	utxoTx.TxOutputs = append(utxoTx.TxOutputs, txOutput)
 	utxoTx.Desc = desc
 	utxoTx.Coinbase = true
+	utxoTx.Timestamp = time.Now().UnixNano()
+	utxoTx.Txid, _ = txhash.MakeTransactionID(utxoTx)
+	return utxoTx, nil
+}
+
+//生成投票奖励的交易
+func (uv *UtxoVM) GenerateVoteAwardTx(address []byte, awardAmount string, desc []byte) (*pb.Transaction, error) {
+	utxoTx := &pb.Transaction{Version: TxVersion}
+	amount := big.NewInt(0)
+	amount.SetString(awardAmount, 10) // 10进制转换大整数
+	if amount.Cmp(big.NewInt(0)) < 0 {
+		return nil, ErrNegativeAmount
+	}
+	txOutput := &pb.TxOutput{}
+	txOutput.ToAddr = []byte(address)
+	txOutput.Amount = amount.Bytes()
+	utxoTx.TxOutputs = append(utxoTx.TxOutputs, txOutput)
+	utxoTx.Desc = desc
+	utxoTx.VoteCoinbase = true //是否为投票所得
 	utxoTx.Timestamp = time.Now().UnixNano()
 	utxoTx.Txid, _ = txhash.MakeTransactionID(utxoTx)
 	return utxoTx, nil
@@ -816,9 +845,67 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 
 	// if no reserved request and user's request, return directly
 	// the operation of xmodel.NewXModelCache costs some resources
-	if len(req.Requests) == 0 {
+	//if len(req.Requests) == 0 {
+	//	rsps := &pb.InvokeResponse{}
+	//	return rsps, nil
+	//}
+
+	//允许通过的请求
+	modules := []string{"transfer", "tdpos", "proposal", "kernel", "xkernel", "wasm", "native"}
+
+	//判断是否为普通转账操作
+	for _, v := range req.Requests {
+		allow := false
+		//该请求是否允许
+		for _, module := range modules {
+			if module == v.ModuleName {
+				allow = true
+				break
+			}
+		}
+		//请求不被允许
+		if !allow {
+			return nil, errors.New("not allowed module")
+		}
+
 		rsps := &pb.InvokeResponse{}
-		return rsps, nil
+
+		/*todo bug:如果用户自己伪造了一个请求，则可跳过判断；比如
+
+		fake.json
+		{
+		    "module": "xkernel",
+		    "method": "",
+		    "args": {}
+		}
+
+		./xchain-cli transfer --to=dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN --desc=fake.json --amount=100
+
+		*/
+
+		switch v.ModuleName {
+		case "transfer": //是转账操作，判断手续费
+			//fee := uv.ledger.GetTransferFeeAmount() //只用创世时的配置金额
+			fee := uv.GetTransferFeeAmount() //可以更新的配置金额
+			str := strconv.FormatInt(fee, 10)
+			if v.Amount != str {
+				return nil, errors.New("need input fee " + str)
+			}
+			rsps.GasUsed = fee
+			return rsps, nil
+
+		case "kernel": //创建平行链
+			if string(v.Args["name"]) != string(v.Args["to"]) {
+				return nil, errors.New("only transfer to blockchain")
+			}
+			return rsps, nil
+
+		case "tdpos", "proposal": //投票/撤票或提选人/换共识
+			if req.Initiator != string(v.Args["to"]) {
+				return nil, errors.New("only transfer to your safe")
+			}
+			return rsps, nil
+		}
 	}
 
 	// transfer in contract
@@ -1200,7 +1287,7 @@ func (uv *UtxoVM) doTxInternal(tx *pb.Transaction, batch kvdb.Batch, cacheFiller
 		if !uv.asyncMode {
 			uv.xlog.Trace("    insert utxo key", "utxoKey", utxoKey, "amount", uItem.Amount.String())
 		}
-		if tx.Coinbase {
+		if tx.Coinbase || tx.VoteCoinbase {
 			// coinbase交易（包括创始块和挖矿奖励)会增加系统的总资产
 			uv.updateUtxoTotal(uItem.Amount, batch, true)
 		}
@@ -1252,7 +1339,7 @@ func (uv *UtxoVM) undoTxInternal(tx *pb.Transaction, batch kvdb.Batch) error {
 		uv.utxoCache.Remove(string(addr), utxoKey)
 		uv.subBalance(addr, txOutputAmount)
 		uv.xlog.Trace("    undo delete utxo key", "utxoKey", utxoKey)
-		if tx.Coinbase {
+		if tx.Coinbase || tx.VoteCoinbase {
 			// coinbase交易（包括创始块和挖矿奖励), 回滚会导致系统总资产缩水
 			delta := big.NewInt(0)
 			delta.SetBytes(txOutput.Amount)
@@ -1403,7 +1490,7 @@ func (uv *UtxoVM) IsInUnConfirm(txid string) bool {
 // DoTx 执行一个交易, 影响utxo表和unconfirm-transaction表
 func (uv *UtxoVM) DoTx(tx *pb.Transaction) error {
 	tx.ReceivedTimestamp = time.Now().UnixNano()
-	if tx.Coinbase {
+	if tx.Coinbase || tx.VoteCoinbase {
 		uv.xlog.Warn("coinbase tx can not be given by PostTx", "txid", global.F(tx.Txid))
 		return ErrUnexpected
 	}
@@ -1690,7 +1777,7 @@ func (uv *UtxoVM) PlayForMiner(blockid []byte, batch kvdb.Batch) error {
 	}()
 	for _, tx := range block.Transactions {
 		txid := string(tx.Txid)
-		if tx.Coinbase {
+		if tx.Coinbase || tx.VoteCoinbase {
 			err = uv.doTxInternal(tx, batch, nil)
 			if err != nil {
 				uv.xlog.Warn("dotx failed when PlayForMiner", "txid", fmt.Sprintf("%x", tx.Txid), "err", err)
@@ -1871,7 +1958,7 @@ func (uv *UtxoVM) Walk(blockid []byte, ledgerPrune bool) error {
 		idx, length := 0, len(todoBlk.Transactions)
 		for idx < length {
 			tx := todoBlk.Transactions[idx]
-			if !tx.Autogen && !tx.Coinbase {
+			if !tx.Autogen && !tx.Coinbase && !tx.VoteCoinbase {
 				if ok, err := uv.ImmediateVerifyTx(tx, false); !ok {
 					uv.xlog.Warn("dotx failed to ImmediateVerifyTx", "txid", fmt.Sprintf("%x", tx.Txid), "err", err)
 					return errors.New("dotx failed to ImmediateVerifyTx error")
@@ -2238,6 +2325,7 @@ func (uv *UtxoVM) GetMeta() *pb.UtxoMeta {
 	meta.ReservedContracts = uv.meta.GetReservedContracts()
 	meta.ForbiddenContract = uv.meta.GetForbiddenContract()
 	meta.NewAccountResourceAmount = uv.meta.GetNewAccountResourceAmount()
+	meta.TransferFeeAmount = uv.meta.GetTransferFeeAmount()
 	meta.IrreversibleBlockHeight = uv.meta.GetIrreversibleBlockHeight()
 	meta.IrreversibleSlideWindow = uv.meta.GetIrreversibleSlideWindow()
 	meta.GasPrice = uv.meta.GetGasPrice()

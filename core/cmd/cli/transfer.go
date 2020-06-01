@@ -115,6 +115,13 @@ type invokeRequestWraper struct {
 	Args map[string]string `json:"args,omitempty"`
 }
 
+//获取desc的内容
+type descWraper struct {
+	Module string                 `json:"module,omitempty"`
+	Method string                 `json:"method,omitempty"`
+	Args   map[string]interface{} `json:"args,omitempty"`
+}
+
 func newFeeAccount(fee string) *pb.TxDataAccount {
 	return &pb.TxDataAccount{
 		Address: utxo.FeePlaceholder,

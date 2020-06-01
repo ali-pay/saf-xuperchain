@@ -19,6 +19,54 @@ var (
 	TxSizePercent = 0.8
 )
 
+//获取当前的转账手续费
+func (uv *UtxoVM) GetTransferFeeAmount() int64 {
+	uv.mutexMeta.Lock()
+	defer uv.mutexMeta.Unlock()
+	return uv.meta.GetTransferFeeAmount()
+}
+
+//从账本中加载最新的手续费，如果没有就获取创世区块中定义的
+func (uv *UtxoVM) LoadTransferFeeAmount() (int64, error) {
+	transferFeeAmountBuf, findErr := uv.metaTable.Get([]byte(ledger_pkg.TransferFeeAmountKey))
+	if findErr == nil {
+		utxoMeta := &pb.UtxoMeta{}
+		err := proto.Unmarshal(transferFeeAmountBuf, utxoMeta)
+		return utxoMeta.GetTransferFeeAmount(), err
+	} else if common.NormalizedKVError(findErr) == common.ErrKVNotFound {
+		genesisTransferFeeAmount := uv.ledger.GetTransferFeeAmount()
+		if genesisTransferFeeAmount < 0 {
+			return genesisTransferFeeAmount, ErrProposalParamsIsNegativeNumber
+		}
+		return genesisTransferFeeAmount, nil
+	}
+
+	return int64(0), findErr
+}
+
+//更新手续费，将其记录到账本中
+func (uv *UtxoVM) UpdateTransferFeeAmount(transferFeeAmount int64, batch kvdb.Batch) error {
+	if transferFeeAmount < 0 {
+		return ErrProposalParamsIsNegativeNumber
+	}
+	tmpMeta := &pb.UtxoMeta{}
+	newMeta := proto.Clone(tmpMeta).(*pb.UtxoMeta)
+	newMeta.TransferFeeAmount = transferFeeAmount
+	transferFeeAmountBuf, pbErr := proto.Marshal(newMeta)
+	if pbErr != nil {
+		uv.xlog.Warn("failed to marshal pb meta")
+		return pbErr
+	}
+	err := batch.Put([]byte(pb.MetaTablePrefix+ledger_pkg.TransferFeeAmountKey), transferFeeAmountBuf)
+	if err == nil {
+		uv.xlog.Info("Update transferFeeAmount succeed")
+	}
+	uv.mutexMeta.Lock()
+	defer uv.mutexMeta.Unlock()
+	uv.metaTmp.TransferFeeAmount = transferFeeAmount
+	return err
+}
+
 // GetNewAccountResourceAmount get account for creating an account
 func (uv *UtxoVM) GetNewAccountResourceAmount() int64 {
 	uv.mutexMeta.Lock()
