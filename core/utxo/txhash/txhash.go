@@ -142,9 +142,10 @@ func encodeTxData(tx *pb.Transaction, includeSigns bool) ([]byte, error) {
 	if err = encoder.Encode(tx.Coinbase); err != nil {
 		return nil, err
 	}
-	if err = encoder.Encode(tx.VoteCoinbase); err != nil {
-		return nil, err
-	}
+	//如果要VoteCoinbase字段，则sdk也要添加函数调用
+	//if err = encoder.Encode(tx.VoteCoinbase); err != nil {
+	//	return nil, err
+	//}
 	if err = encoder.Encode(tx.Autogen); err != nil {
 		return nil, err
 	}

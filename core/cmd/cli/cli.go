@@ -439,8 +439,6 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 		}
 	}
 
-	fmt.Println(preExeRPCReq.Requests[0].Args)
-
 	preExeRes, err := client.PreExec(ctx, preExeRPCReq)
 	if err != nil {
 		return nil, err
