@@ -853,9 +853,10 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 	//允许通过的请求
 	modules := []string{"transfer", "tdpos", "proposal", "kernel", "xkernel", "wasm", "native"}
 
+	allow := false
 	//判断是否为普通转账操作
 	for _, v := range req.Requests {
-		allow := false
+		allow = false
 		//该请求是否允许
 		for _, module := range modules {
 			if module == v.ModuleName {
@@ -887,11 +888,11 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 		case "transfer": //是转账操作，判断手续费
 			//fee := uv.ledger.GetTransferFeeAmount() //只用创世时的配置金额
 			fee := uv.GetTransferFeeAmount() //可以更新的配置金额
-			str := strconv.FormatInt(fee, 10)
-			if v.Amount != str {
-				return nil, errors.New("need input fee " + str)
+			amount, _ := strconv.ParseInt(v.Amount, 10, 64)
+			if amount < fee {
+				return nil, fmt.Errorf("need input fee %d", fee)
 			}
-			rsps.GasUsed = fee
+			rsps.GasUsed = amount
 			return rsps, nil
 
 		case "kernel": //创建平行链
@@ -906,6 +907,11 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 			}
 			return rsps, nil
 		}
+	}
+
+	//请求不被允许
+	if !allow {
+		return nil, errors.New("not allowed module")
 	}
 
 	// transfer in contract

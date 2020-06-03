@@ -398,7 +398,8 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 
 		//拦截不应该由transfer发起的请求
 		switch desc.Module {
-		case "xkernel", "wasm", "native":
+		case "tdpos", "proposal", "kernel":
+		default:
 			return nil, errors.New("desc is invalid")
 		}
 

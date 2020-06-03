@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -25,6 +26,8 @@ type MergeUtxoCommand struct {
 	account string
 	// white merge an contract account, it can not be null
 	accountPath string
+
+	fee string //手续费
 }
 
 // NewMergeUtxoCommand new an instance of merge utxo command
@@ -46,6 +49,7 @@ func NewMergeUtxoCommand(cli *Cli) *cobra.Command {
 func (c *MergeUtxoCommand) addFlags() {
 	c.cmd.Flags().StringVarP(&c.account, "account", "A", "", "The account/address to be merged (default ./data/keys/address).")
 	c.cmd.Flags().StringVarP(&c.accountPath, "accountPath", "P", "", "The account path, which is required for an account.")
+	c.cmd.Flags().StringVar(&c.fee, "fee", "0", "fee of one tx")
 }
 
 func (c *MergeUtxoCommand) mergeUtxo(ctx context.Context) error {
@@ -79,6 +83,10 @@ func (c *MergeUtxoCommand) mergeUtxo(ctx context.Context) error {
 	}
 
 	txInputs, txOutput, err := ct.GenTxInputsWithMergeUTXO(context.Background())
+	if err != nil {
+		return err
+	}
+
 	tx.TxInputs = txInputs
 	// validation check
 	if len(tx.TxInputs) == 0 {
@@ -86,7 +94,25 @@ func (c *MergeUtxoCommand) mergeUtxo(ctx context.Context) error {
 	}
 
 	txOutputs := []*pb.TxOutput{}
-	txOutputs = append(txOutputs, txOutput)
+
+	//设置手续费的交易
+	fee, ok := big.NewInt(0).SetString(c.fee, 10)
+	if !ok {
+		return errors.New("can't get fee")
+	}
+	txOutputs = append(txOutputs, &pb.TxOutput{
+		ToAddr: []byte(utxo.FeePlaceholder),
+		Amount: fee.Bytes(),
+	})
+
+	//转账的金额要减去手续费
+	if txOutput != nil {
+		amount := big.NewInt(0).SetBytes(txOutput.Amount)
+		amount = big.NewInt(0).Sub(amount, fee)
+		txOutput.Amount = amount.Bytes()
+		txOutputs = append(txOutputs, txOutput)
+	}
+
 	tx.TxOutputs = txOutputs
 
 	tx.AuthRequire, err = genAuthRequire(c.account, c.accountPath)
@@ -96,8 +122,10 @@ func (c *MergeUtxoCommand) mergeUtxo(ctx context.Context) error {
 
 	// preExe
 	preExeRPCReq := &pb.InvokeRPCRequest{
-		Bcname:      c.cli.RootOptions.Name,
-		Requests:    []*pb.InvokeRequest{},
+		Bcname: c.cli.RootOptions.Name,
+		Requests: []*pb.InvokeRequest{
+			{ModuleName: "transfer", Amount: c.fee},
+		},
 		Header:      global.GHeader(),
 		Initiator:   initAk,
 		AuthRequire: tx.AuthRequire,
