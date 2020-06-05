@@ -36,3 +36,11 @@ clean:
 	rm -f event_client
 
 .PHONY: all test clean
+
+cli:
+	PLATFORM=$(PLATFORM) ./build-cli.sh
+export GO111MODULE=on
+export GOFLAGS=-mod=vendor
+XCHAIN_ROOT := ${PWD}/core
+export XCHAIN_ROOT
+PATH := ${PWD}/core/xvm/compile/wabt/build:$(PATH)

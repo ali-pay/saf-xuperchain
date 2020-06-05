@@ -49,6 +49,7 @@ datapath: ./data/blockchain
 #    - /ssd3/blockchain
 
 utxo:
+  nonUtxo: true
   # utxo的内存LRUCache大小，表示内存中最多缓存多少个UtxoItem
   cachesize: 2000000
   # GenerateTx的临时锁定期限，默认是60秒
