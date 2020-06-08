@@ -411,9 +411,19 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 
 		//允许的请求列表
 		modules := map[string][]string{
-			"tdpos":    {"nominate_candidate", "vote"},
-			"proposal": {"Propose", "Thaw"},
-			"kernel":   {"CreateBlockChain"},
+			"tdpos":    {"nominate_candidate", "revoke_candidate", "vote", "revoke_vote", "check_validater"},
+			"proposal": {"Propose", "Thaw", "CreateTrigger", "Vote"},
+			"kernel": {
+				"CreateBlockChain",
+				"UpdateMaxBlockSize",
+				"UpdateReservedContract",
+				"UpdateForbiddenContract",
+				"UpdateBlockChainData",
+				"UpdateNewAccountResourceAmount",
+				"UpdateTransferFeeAmount",
+				"UpdateIrreversibleSlideWindow",
+				"UpdateGasPrice",
+			},
 		}
 
 	allow:
