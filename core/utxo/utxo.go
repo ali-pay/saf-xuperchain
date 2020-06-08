@@ -866,7 +866,8 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 		}
 		//请求不被允许
 		if !allow {
-			return nil, errors.New("not allowed module")
+			return nil, errors.New("request is invalid")
+			//return nil, errors.New("not allowed module")
 		}
 
 		rsps := &pb.InvokeResponse{}
@@ -911,7 +912,8 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 
 	//请求不被允许
 	if !allow {
-		return nil, errors.New("not allowed module")
+		return nil, errors.New("request is invalid")
+		//return nil, errors.New("not allowed module")
 	}
 
 	// transfer in contract

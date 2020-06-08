@@ -357,15 +357,8 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 		txOutput.FrozenHeight = acc.FrozenHeight
 		tx.TxOutputs = append(tx.TxOutputs, txOutput)
 	}
-	// 组装input 和 剩余output
-	txInputs, deltaTxOutput, err := assembleTxInputsSupportAccount(ctx, client, opt, totalNeed)
-	if err != nil {
-		return nil, err
-	}
-	tx.TxInputs = txInputs
-	if deltaTxOutput != nil {
-		tx.TxOutputs = append(tx.TxOutputs, deltaTxOutput)
-	}
+
+	var err error
 	// 设置auth require
 	tx.AuthRequire, err = genAuthRequire(opt.From, opt.AccountPath)
 	if err != nil {
@@ -400,7 +393,8 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 		switch desc.Module {
 		case "tdpos", "proposal", "kernel":
 		default:
-			return nil, errors.New("desc is invalid")
+			return nil, errors.New("request is invalid")
+			//return nil, errors.New("desc is invalid")
 		}
 
 		//创建平行链时的链名
@@ -448,6 +442,17 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 	tx.ContractRequests = preExeRes.GetResponse().GetRequests()
 	tx.TxInputsExt = preExeRes.GetResponse().GetInputs()
 	tx.TxOutputsExt = preExeRes.GetResponse().GetOutputs()
+
+	//构造交易放到手续费判断下面来，避免服务端的余额判断错误
+	// 组装input 和 剩余output
+	txInputs, deltaTxOutput, err := assembleTxInputsSupportAccount(ctx, client, opt, totalNeed)
+	if err != nil {
+		return nil, err
+	}
+	tx.TxInputs = txInputs
+	if deltaTxOutput != nil {
+		tx.TxOutputs = append(tx.TxOutputs, deltaTxOutput)
+	}
 
 	txStatus := &pb.TxStatus{
 		Bcname: opt.BlockchainName,
