@@ -413,7 +413,17 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 		modules := map[string][]string{
 			"tdpos":    {"nominate_candidate", "vote"},
 			"proposal": {"Propose", "Thaw"},
-			"kernel":   {"CreateBlockChain"},
+			"kernel": {
+				"CreateBlockChain",
+				"UpdateMaxBlockSize",
+				"UpdateReservedContract",
+				"UpdateForbiddenContract",
+				"UpdateBlockChainData",
+				"UpdateNewAccountResourceAmount",
+				"UpdateTransferFeeAmount",
+				"UpdateIrreversibleSlideWindow",
+				"UpdateGasPrice",
+			},
 		}
 
 	allow:

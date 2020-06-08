@@ -897,7 +897,7 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 			return rsps, nil
 
 		case "kernel": //创建平行链
-			if string(v.Args["name"]) != string(v.Args["to"]) {
+			if string(v.Args["bcname"]) != string(v.Args["to"]) {
 				return nil, errors.New("only transfer to blockchain")
 			}
 			return rsps, nil
