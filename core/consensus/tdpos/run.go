@@ -183,8 +183,12 @@ func (tp *TDpos) runRevokeVote(desc *contract.TxDesc, block *pb.InternalBlock) e
 		left -= ballots
 	}
 	//5.记录总票数
-	VoterBallots.Store(voter, left)
+	if left == 0 {
+		VoterBallots.Delete(voter)
+		return nil
+	}
 
+	VoterBallots.Store(voter, left)
 	return nil
 }
 
