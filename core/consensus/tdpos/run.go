@@ -91,7 +91,6 @@ func (tp *TDpos) runVote(desc *contract.TxDesc, block *pb.InternalBlock) error {
 	}
 	//5.记录总票数
 	VoterBallots.Store(voter, ballots)
-	fmt.Println("----vote:", voter, ballots)
 
 	return nil
 }
@@ -185,7 +184,7 @@ func (tp *TDpos) runRevokeVote(desc *contract.TxDesc, block *pb.InternalBlock) e
 	}
 	//5.记录总票数
 	VoterBallots.Store(voter, left)
-	fmt.Println("----revote:", voter, ballots, left)
+
 	return nil
 }
 

@@ -371,7 +371,6 @@ func (tp *TDpos) initVoterBallots() error {
 		}
 		//加载进内存缓存
 		VoterBallots.Store(balKey, ballots)
-		fmt.Println("----", "key:", key, "address:", address, "balKey:", balKey, "ballots:", ballots)
 	}
 	return nil
 }
