@@ -853,6 +853,8 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 	//允许通过的请求
 	modules := []string{"transfer", "tdpos", "proposal", "kernel", "xkernel", "wasm", "native"}
 
+	fmt.Println("req:", req.Requests)
+
 	allow := false
 	//判断是否为普通转账操作
 	for _, v := range req.Requests {

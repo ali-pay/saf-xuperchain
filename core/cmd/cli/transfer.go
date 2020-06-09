@@ -113,6 +113,8 @@ type invokeRequestWraper struct {
 	pb.InvokeRequest
 	// 取巧的手段来shadow pb.InvokeRequest里面的Args字段
 	Args map[string]string `json:"args,omitempty"`
+
+	descWraper
 }
 
 //获取desc的内容

@@ -16,48 +16,15 @@ func (xc *XChainCore) GenerateVoteAward() ([]*pb.Transaction, error) {
 
 	//选民的票数统计
 	ballots := make(map[string]int64)
-
-	//候选人列表
-	candidates, err := xc.GetDposCandidates()
-	if err != nil {
-		xc.log.Error("[Vote_Award] fail to get candidates", "err", err)
-		return nil, err
-	}
-
-	//遍历所有候选人
-	for _, candidate := range candidates {
-		records, err := xc.GetDposVotedRecords(candidate)
+	tdpos.VoterBallots.Range(func(k, v interface{}) bool {
+		voter, err := tdpos.ParseVoterKey(k.(string))
 		if err != nil {
-			xc.log.Error("[Vote_Award] fail to get voted records", "err", err)
-			return nil, err
+			return false
 		}
-		//xc.log.Warn("[Vote_Award] get voted records success", "current candidate is", candidate, "voted records", records)
-
-		//遍历所有候选人的被投票记录，查询每笔投票的票数
-		for _, voted := range records {
-			//构造查询key
-			keyVoteCandidate := tdpos.GenVoteCandidateKey(voted.Voter, candidate, voted.Txid)
-
-			//查询投票票数
-			balVal, err := xc.Utxovm.GetFromTable(nil, []byte(keyVoteCandidate))
-			if err != nil {
-				xc.log.Error("[Vote_Award] fail to get from table", "err", err)
-				return nil, err
-			}
-
-			//票数
-			ballot, err := strconv.ParseInt(string(balVal), 10, 64)
-			if err != nil {
-				xc.log.Error("[Vote_Award] fail to balVal parse int64", "err", err)
-				return nil, err
-			}
-
-			//xc.log.Warn("[Vote_Award] get ballot success", "voter", voted.Voter, "ballot", ballot)
-
-			ballots[voted.Voter] += ballot //统计选民的投票
-			ballots["all"] += ballot       //统计全网总票数
-		}
-	}
+		ballots[voter] = v.(int64)
+		ballots["all"] += v.(int64)
+		return true
+	})
 
 	//打印票数
 	for voter, ballot := range ballots {

@@ -44,6 +44,9 @@ func (tp *TDpos) Init() {
 	tp.revokeCache = new(sync.Map)
 	tp.context = &contract.TxContext{}
 	tp.mutex = new(sync.RWMutex)
+
+	//初始化对象
+	VoterBallots = new(sync.Map)
 }
 
 // Type return the type of TDpos consensus
@@ -135,6 +138,12 @@ func (tp *TDpos) Configure(xlog log.Logger, cfg *config.NodeConfig, consCfg map[
 
 	if err = tp.initCandidateBallots(); err != nil {
 		xlog.Warn("initCandidateBallots failed!", "error", err)
+		return err
+	}
+
+	//初始化投票人投票信息
+	if err = tp.initVoterBallots(); err != nil {
+		xlog.Warn("initVoterBallots failed!", "error", err)
 		return err
 	}
 	tp.log.Trace("Configure", "TDpos", tp)
@@ -333,6 +342,36 @@ func (tp *TDpos) initCandidateBallots() error {
 			return err
 		}
 		tp.candidateBallots.Store(balKey, ballots)
+	}
+	return nil
+}
+
+//初始化投票人的投票数
+func (tp *TDpos) initVoterBallots() error {
+	//遍历出相同前缀的item
+	it := tp.utxoVM.ScanWithPrefix([]byte(GenVoterBallotsPrefix()))
+	defer it.Release()
+	for it.Next() {
+		key := string(it.Key())
+		//根据该item的key获取投票人地址
+		address, err := ParseVoterKey(key)
+		tp.log.Trace("initVoterBallots", "key", key, "address", address)
+		if err != nil {
+			tp.log.Warn("initVoterBallots ParseVoterKey error", "key", key)
+			return err
+		}
+		//获取该投票人的投票数
+		balKey := GenVoterBallotsKey(address)
+		val, err := tp.utxoVM.GetFromTable(nil, []byte(balKey))
+		ballots, err := strconv.ParseInt(string(val), 10, 64)
+		tp.log.Trace("initVoterBallots", "balKey", balKey, "address", address, "ballots", ballots)
+		if err != nil {
+			tp.log.Warn("initVoterBallots parse int error", "err", err.Error())
+			return err
+		}
+		//加载进内存缓存
+		VoterBallots.Store(balKey, ballots)
+		fmt.Println("----", "key:", key, "address:", address, "balKey:", balKey, "ballots:", ballots)
 	}
 	return nil
 }
@@ -724,6 +763,14 @@ func (tp *TDpos) Finalize(blockid []byte) error {
 			tp.candidateBallots.Store(key, value.ballots)
 		}
 		tp.context.UtxoBatch.Put([]byte(key), []byte(strconv.FormatInt(value.ballots, 10)))
+		return true
+	})
+
+	//写入账本
+	VoterBallots.Range(func(k, v interface{}) bool {
+		voter := k.(string)
+		ballots := v.(int64)
+		tp.context.UtxoBatch.Put([]byte(voter), []byte(strconv.FormatInt(ballots, 10)))
 		return true
 	})
 	return nil

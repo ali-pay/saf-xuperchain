@@ -21,6 +21,26 @@ func GenCandidateBallotsKey(address string) string {
 	return baseKey + address
 }
 
+//投票人key的前缀
+func GenVoterBallotsPrefix() string {
+	return pb.ConsTDposPrefix + "_voter_ballots_"
+}
+
+//构造投票人key
+func GenVoterBallotsKey(address string) string {
+	baseKey := GenVoterBallotsPrefix()
+	return baseKey + address
+}
+
+//根据key解析出投票人地址
+func ParseVoterKey(key string) (string, error) {
+	subKeys := strings.Split(key, "_")
+	if len(subKeys) != 4 {
+		return "", errors.New("parse voter key error")
+	}
+	return subKeys[3], nil
+}
+
 // GetCandidateInfoPrefix generate key prefix of candidate info
 func GetCandidateInfoPrefix() string {
 	return pb.ConsTDposPrefix + "_candidate_info_"
