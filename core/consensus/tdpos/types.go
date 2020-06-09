@@ -24,7 +24,10 @@ var (
 	ErrProposeBlockMoreThanConfig = errors.New("Propose block more than config num error")
 )
 
-var VoteAward int64 = 0 //投票奖励总额
+var (
+	VoteAward    int64     = 0 //投票奖励总额
+	VoterBallots *sync.Map     // 投票人投票信息 key: address, value: ballots
+)
 
 const (
 	// TYPE the type of tdpos

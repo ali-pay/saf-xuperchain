@@ -67,6 +67,31 @@ func (tp *TDpos) runVote(desc *contract.TxDesc, block *pb.InternalBlock) error {
 		// 记录了某个人给谁投了票
 		tp.context.UtxoBatch.Put([]byte(keyVoteCandidate), []byte(strconv.FormatInt(voteInfo.ballots, 10)))
 	}
+
+	//记录某个候选人的总票数
+	//1.候选人地址
+	//2.获取历史得票数
+	//3.统计总得票数
+	//4.记录总票数
+	//官方已实现
+	//func (tp *TDpos) Finalize(blockid []byte) error {
+	//	tp.context.UtxoBatch.Put([]byte(key), []byte(strconv.FormatInt(value.ballots, 10)))
+	//}
+
+	//记录选民的总投票数
+	//1.选民地址
+	voter := GenVoterBallotsKey(voteInfo.voter)
+	//2.当前投票总票数
+	size := int64(len(voteInfo.candidates))
+	ballots := voteInfo.ballots * size
+	//3.获取历史投票数
+	if bal, ok := VoterBallots.Load(voter); ok {
+		//4.统计总投票数
+		ballots += bal.(int64)
+	}
+	//5.记录总票数
+	VoterBallots.Store(voter, ballots)
+
 	return nil
 }
 
@@ -143,6 +168,27 @@ func (tp *TDpos) runRevokeVote(desc *contract.TxDesc, block *pb.InternalBlock) e
 		tp.revokeCache.Store(keyRevoke, true)
 		tp.context.UtxoBatch.Put([]byte(keyRevoke), desc.Tx.Txid)
 	}
+
+	//记录选民的总投票数
+	//1.选民地址
+	voter := GenVoterBallotsKey(voteInfo.voter)
+	//2.当前投票总票数
+	size := int64(len(voteInfo.candidates))
+	ballots := voteInfo.ballots * size
+	//3.获取历史投票数
+	var left int64
+	if bal, ok := VoterBallots.Load(voter); ok {
+		//4.统计总投票数
+		left = bal.(int64)
+		left -= ballots
+	}
+	//5.记录总票数
+	if left == 0 {
+		VoterBallots.Delete(voter)
+		return nil
+	}
+
+	VoterBallots.Store(voter, left)
 	return nil
 }
 

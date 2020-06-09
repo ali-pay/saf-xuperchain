@@ -171,11 +171,16 @@ func (c *CommTrans) ReadPreExeReq(buf []byte) (*pb.InvokeRequest, error) {
 		return nil, nil
 	}
 
-	if params.InvokeRequest.ModuleName == "" {
-		return nil, nil
+	if params.InvokeRequest.ModuleName == "" && params.Module == "" {
+		return nil, errors.New("request can not be null")
+	}
+
+	if params.Module != "" {
+		params.ModuleName = params.Module
 	}
 
 	params.InvokeRequest.Args = make(map[string][]byte)
+	params.InvokeRequest.Args["to"] = []byte(c.To)
 	for k, v := range params.Args {
 		params.InvokeRequest.Args[k] = []byte(v)
 	}
