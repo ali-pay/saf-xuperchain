@@ -38,6 +38,7 @@ front/
 visual/
 cc/
 .github/
+!vendor/*
 CONTRIBUTING.md
 CONTRIBUTING_CN.md
 LICENSE
