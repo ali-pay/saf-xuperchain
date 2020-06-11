@@ -34,13 +34,13 @@ event_client
 *.log
 *.log.wf
 
-
-vendor/
 front/
 visual/
 cc/
 .github/
+!vendor/*
 CONTRIBUTING.md
 CONTRIBUTING_CN.md
 LICENSE
 wasm2c
+.null
