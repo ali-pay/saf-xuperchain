@@ -34,8 +34,6 @@ event_client
 *.log
 *.log.wf
 
-
-vendor/
 front/
 visual/
 cc/
