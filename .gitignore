@@ -41,6 +41,5 @@ cc/
 !vendor/*
 CONTRIBUTING.md
 CONTRIBUTING_CN.md
-LICENSE
 wasm2c
 .null
