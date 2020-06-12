@@ -13,7 +13,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/xuperchain/xuperchain/core"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -1498,7 +1497,6 @@ func (uv *UtxoVM) VerifyTxFee(tx *pb.Transaction) bool {
 // VerifyTx check the tx signature and permission
 func (uv *UtxoVM) VerifyTx(tx *pb.Transaction) (bool, error) {
 
-	core.PrintTx(tx)
 	if !uv.VerifyTxFee(tx) {
 		return false, errors.New("you not input fee or transfer address invalid")
 	}
