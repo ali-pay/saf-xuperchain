@@ -5,11 +5,16 @@
 package main
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math/big"
 
 	"github.com/xuperchain/xuperchain/core/pb"
+	"github.com/xuperchain/xuperchain/core/utxo/txhash"
 )
 
 // HexID bytes
@@ -124,32 +129,32 @@ type QuorumCert struct {
 
 // Transaction proto.Transaction
 type Transaction struct {
-	Txid              HexID            `json:"txid"`
-	Blockid           HexID            `json:"blockid"`
-	TxInputs          []TxInput        `json:"txInputs"`
-	TxOutputs         []TxOutput       `json:"txOutputs"`
-	Desc              string           `json:"desc"`
-	Nonce             string           `json:"nonce"`
-	Timestamp         int64            `json:"timestamp"`
-	Version           int32            `json:"version"`
-	Autogen           bool             `json:"autogen"`
-	Coinbase          bool             `json:"coinbase"`
-	VoteCoinbase      bool             `json:"voteCoinbase"`
-	TxInputsExt       []TxInputExt     `json:"txInputsExt"`
-	TxOutputsExt      []TxOutputExt    `json:"txOutputsExt"`
-	ContractRequests  []*InvokeRequest `json:"contractRequests"`
-	Initiator         string           `json:"initiator"`
-	AuthRequire       []string         `json:"authRequire"`
-	InitiatorSigns    []SignatureInfo  `json:"initiatorSigns"`
-	AuthRequireSigns  []SignatureInfo  `json:"authRequireSigns"`
-	ReceivedTimestamp int64            `json:"receivedTimestamp"`
-	ModifyBlock       ModifyBlock      `json:"modifyBlock"`
+	Txid              HexID            `json:"txid,omitempty"`
+	Blockid           HexID            `json:"blockid,omitempty"`
+	TxInputs          []TxInput        `json:"txInputs,omitempty"`
+	TxOutputs         []TxOutput       `json:"txOutputs,omitempty"`
+	Desc              string           `json:"desc,omitempty"`
+	Nonce             string           `json:"nonce,omitempty"`
+	Timestamp         int64            `json:"timestamp,omitempty"`
+	Version           int32            `json:"version,omitempty"`
+	Autogen           bool             `json:"autogen,omitempty"`
+	Coinbase          bool             `json:"coinbase,omitempty"`
+	VoteCoinbase      bool             `json:"voteCoinbase,omitempty"`
+	TxInputsExt       []TxInputExt     `json:"txInputsExt,omitempty"`
+	TxOutputsExt      []TxOutputExt    `json:"txOutputsExt,omitempty"`
+	ContractRequests  []*InvokeRequest `json:"contractRequests,omitempty"`
+	Initiator         string           `json:"initiator,omitempty"`
+	AuthRequire       []string         `json:"authRequire,omitempty"`
+	InitiatorSigns    []SignatureInfo  `json:"initiatorSigns,omitempty"`
+	AuthRequireSigns  []SignatureInfo  `json:"authRequireSigns,omitempty"`
+	ReceivedTimestamp int64            `json:"receivedTimestamp,omitempty"`
+	ModifyBlock       ModifyBlock      `json:"modifyBlock,omitempty"`
 }
 
 type ModifyBlock struct {
-	Marked          bool   `json:"marked"`
-	EffectiveHeight int64  `json:"effectiveHeight"`
-	EffectiveTxid   string `json:"effectiveTxid"`
+	Marked          bool   `json:"marked,omitempty"`
+	EffectiveHeight int64  `json:"effectiveHeight,omitempty"`
+	EffectiveTxid   string `json:"effectiveTxid,omitempty"`
 }
 
 // BigInt big int
@@ -206,10 +211,14 @@ func FromPBTx(tx *pb.Transaction) *Transaction {
 		})
 	}
 	for _, outputExt := range tx.TxOutputsExt {
+		v := string(outputExt.Value)
+		if len(v) > 30 {
+			v = "value too long"
+		}
 		t.TxOutputsExt = append(t.TxOutputsExt, TxOutputExt{
 			Bucket: outputExt.Bucket,
 			Key:    string(outputExt.Key),
-			Value:  string(outputExt.Value),
+			Value:  v,
 		})
 	}
 	if tx.ContractRequests != nil {
@@ -222,7 +231,11 @@ func FromPBTx(tx *pb.Transaction) *Transaction {
 				Args:         map[string]string{},
 			}
 			for argKey, argV := range req.Args {
-				tmpReq.Args[argKey] = string(argV)
+				v := string(argV)
+				if len(argV) > 30 {
+					v = "value too long"
+				}
+				tmpReq.Args[argKey] = v
 			}
 			for _, rlimit := range req.ResourceLimits {
 				resource := ResourceLimit{
@@ -484,4 +497,72 @@ type ContractDesc struct {
 	Method  string      `json:"method"`
 	Args    interface{} `json:"args"`
 	Trigger TriggerDesc `json:"trigger"`
+}
+
+func PrintTx(tx *pb.Transaction) error {
+	// print tx
+	t := FromPBTx(tx)
+	output, err := json.MarshalIndent(t, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(output))
+
+	return nil
+}
+
+func SumHash(tx *pb.Transaction) error {
+	j, err := json.Marshal(tx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("md5:", md5.Sum(j))
+	fmt.Println("sha1:", sha1.Sum(j))
+	fmt.Println("sha256:", sha256.Sum256(j))
+
+	txid, err := txhash.MakeTransactionID(tx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("txid:", hex.EncodeToString(txid))
+
+	return nil
+}
+
+func FromSimpleTx(tx *pb.Transaction) *Transaction {
+	t := &Transaction{
+		Txid:              tx.Txid,
+		Blockid:           tx.Blockid,
+		Timestamp:         tx.Timestamp,
+		Initiator:         tx.Initiator,
+	}
+	for _, output := range tx.TxOutputs {
+		t.TxOutputs = append(t.TxOutputs, TxOutput{
+			Amount: FromAmountBytes(output.Amount),
+			ToAddr: string(output.ToAddr),
+		})
+	}
+	return t
+}
+
+func FromSimpleTxs(txs []*pb.Transaction) string {
+	tempTxs := []*Transaction{}
+	var output []byte
+	for _, v := range txs {
+		tx := &Transaction{
+			Txid:              v.Txid,
+			Blockid:           v.Blockid,
+			Timestamp:         v.Timestamp,
+			Initiator:         v.Initiator,
+		}
+		for _, output := range v.TxOutputs {
+			tx.TxOutputs = append(tx.TxOutputs, TxOutput{
+				Amount: FromAmountBytes(output.Amount),
+				ToAddr: string(output.ToAddr),
+			})
+		}
+		tempTxs = append(tempTxs, tx)
+		output, _ = json.MarshalIndent(tempTxs, "", "  ")
+	}
+	return string(output)
 }

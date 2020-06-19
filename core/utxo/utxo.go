@@ -197,6 +197,12 @@ func GenUtxoKeyWithPrefix(addr []byte, txid []byte, offset int32) string {
 	return pb.UTXOTablePrefix + baseUtxoKey
 }
 
+//address_time_txid
+func GenUtxoTimeKey(utxoKey string) string {
+	arr := strings.Split(utxoKey, "_")
+	return fmt.Sprintf("%s_%d_%s", arr[0], time.Now().UnixNano(), arr[1])
+}
+
 // checkInputEqualOutput 校验交易的输入输出是否相等
 func (uv *UtxoVM) checkInputEqualOutput(tx *pb.Transaction) error {
 	// first check outputs
@@ -1194,6 +1200,9 @@ func (uv *UtxoVM) payFee(tx *pb.Transaction, batch kvdb.Batch, block *pb.Interna
 		uv.addBalance(addr, uItem.Amount)
 		uv.utxoCache.Insert(string(addr), utxoKey, uItem)
 		uv.xlog.Trace("    insert fee utxo key", "utxoKey", utxoKey, "amount", uItem.Amount.String())
+
+		timeKey := GenUtxoTimeKey(utxoKey)
+		batch.Put([]byte(timeKey), []byte{})
 	}
 	return nil
 }
@@ -1211,6 +1220,9 @@ func (uv *UtxoVM) undoPayFee(tx *pb.Transaction, batch kvdb.Batch, block *pb.Int
 		uv.utxoCache.Remove(string(addr), utxoKey)
 		uv.subBalance(addr, big.NewInt(0).SetBytes(txOutput.Amount))
 		uv.xlog.Info("    undo delete fee utxo key", "utxoKey", utxoKey)
+
+		timeKey := GenUtxoTimeKey(utxoKey)
+		batch.Delete([]byte(timeKey))
 	}
 	return nil
 }
@@ -1245,6 +1257,9 @@ func (uv *UtxoVM) doTxInternal(tx *pb.Transaction, batch kvdb.Batch, cacheFiller
 		if !uv.asyncMode {
 			uv.xlog.Trace("    delete utxo key", "utxoKey", utxoKey)
 		}
+
+		timeKey := GenUtxoTimeKey(utxoKey)
+		batch.Delete([]byte(timeKey))
 	}
 	for offset, txOutput := range tx.TxOutputs {
 		addr := txOutput.ToAddr
@@ -1252,6 +1267,10 @@ func (uv *UtxoVM) doTxInternal(tx *pb.Transaction, batch kvdb.Batch, cacheFiller
 			continue
 		}
 		utxoKey := GenUtxoKeyWithPrefix(addr, tx.Txid, int32(offset))
+
+		timeKey := GenUtxoTimeKey(utxoKey)
+		batch.Put([]byte(timeKey), []byte{})
+
 		uItem := &UtxoItem{}
 		uItem.Amount = big.NewInt(0)
 		uItem.Amount.SetBytes(txOutput.Amount)
@@ -1313,6 +1332,9 @@ func (uv *UtxoVM) undoTxInternal(tx *pb.Transaction, batch kvdb.Batch) error {
 		uv.unlockKey([]byte(utxoKey))
 		uv.addBalance(addr, uItem.Amount)
 		uv.xlog.Trace("    undo insert utxo key", "utxoKey", utxoKey)
+
+		timeKey := GenUtxoTimeKey(utxoKey)
+		batch.Put([]byte(timeKey), []byte{})
 	}
 	for offset, txOutput := range tx.TxOutputs {
 		addr := txOutput.ToAddr
@@ -1334,6 +1356,9 @@ func (uv *UtxoVM) undoTxInternal(tx *pb.Transaction, batch kvdb.Batch) error {
 			delta.SetBytes(txOutput.Amount)
 			uv.updateUtxoTotal(delta, batch, false)
 		}
+
+		timeKey := GenUtxoTimeKey(utxoKey)
+		batch.Delete([]byte(timeKey))
 	}
 	return nil
 }
@@ -2214,6 +2239,9 @@ func (uv *UtxoVM) getBalance(addr string) (*big.Int, error) {
 	defer it.Release()
 	for it.Next() {
 		uBinary := it.Value()
+		if len(uBinary) == 0 {
+			continue
+		}
 		uItem := &UtxoItem{}
 		uErr := uItem.Loads(uBinary)
 		if uErr != nil {
@@ -2625,6 +2653,69 @@ func MakeUtxoKey(key []byte, amount string) *pb.UtxoKey {
 		Offset:  string(keyTuple[len(keyTuple)-1]),
 		Amount:  amount,
 	}
-
 	return tmpUtxoKey
+}
+
+//查询某账户的所有交易
+func (uv *UtxoVM) QueryAccountTxs(accountName string, pageNum, displayCount int64) (*pb.AccountTxs, error) {
+	txs := &pb.AccountTxs{
+		Header: &pb.Header{},
+		Txs:    make([]*pb.Transaction, 0),
+	}
+
+	//偏移量
+	count := pageNum * displayCount
+
+	addrPrefix := fmt.Sprintf("%s%s_159", pb.UTXOTablePrefix, accountName)
+	it := uv.ldb.NewIteratorWithPrefix([]byte(addrPrefix))
+	defer it.Release()
+
+	//让索引指向最后一条数据
+	it.Last()
+
+	//逆序查询
+	for it.Last(); it.Prev(); {
+		if count--; count < 0 {
+			break
+		}
+		//只要最后的记录
+		if count-displayCount > 0 {
+			continue
+		}
+
+		//根据交易id查询
+		key := append([]byte{}, it.Key()...)
+		keyTuple := bytes.Split(key, []byte("_"))          //Uaddr_time_txid
+		txid, err := hex.DecodeString(string(keyTuple[2])) //最后一个就是txid
+		if err != nil {
+			return txs, err
+		}
+		tx, err := uv.ledger.QueryTransaction(txid)
+		if err != nil {
+			return txs, err
+		}
+
+		//简化输出
+		simpleTx := &pb.Transaction{
+			Txid:      tx.Txid,
+			Blockid:   tx.Blockid,
+			Initiator: tx.Initiator,
+			Timestamp: tx.Timestamp,
+			TxOutputs: make([]*pb.TxOutput, 0),
+		}
+		for _, v := range tx.TxOutputs {
+			if string(v.ToAddr) == tx.Initiator {
+				continue
+			}
+			simpleTx.TxOutputs = append(simpleTx.TxOutputs, &pb.TxOutput{
+				Amount: v.Amount,
+				ToAddr: v.ToAddr,
+			})
+		}
+
+		//生成列表
+		txs.Txs = append(txs.Txs, simpleTx)
+	}
+
+	return txs, it.Error()
 }

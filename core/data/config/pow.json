@@ -24,10 +24,10 @@
     "genesis_consensus":{
        "name": "pow",
        "config": {
-			"defaultTarget": "19",
+			"defaultTarget": "22",
 			"adjustHeightGap": "10",
 			"expectedPeriod": "15",
-			"maxTarget": "22"
+			"maxTarget": "0"
        }
     },
     "group_chain_contract": {

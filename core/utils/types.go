@@ -2,7 +2,7 @@
  * Copyright (c) 2019. Baidu Inc. All Rights Reserved.
  */
 
-package core
+package utils
 
 import (
 	"crypto/md5"
@@ -129,32 +129,32 @@ type QuorumCert struct {
 
 // Transaction proto.Transaction
 type Transaction struct {
-	Txid              HexID            `json:"txid"`
-	Blockid           HexID            `json:"blockid"`
-	TxInputs          []TxInput        `json:"txInputs"`
-	TxOutputs         []TxOutput       `json:"txOutputs"`
-	Desc              string           `json:"desc"`
-	Nonce             string           `json:"nonce"`
-	Timestamp         int64            `json:"timestamp"`
-	Version           int32            `json:"version"`
-	Autogen           bool             `json:"autogen"`
-	Coinbase          bool             `json:"coinbase"`
-	VoteCoinbase      bool             `json:"voteCoinbase"`
-	TxInputsExt       []TxInputExt     `json:"txInputsExt"`
-	TxOutputsExt      []TxOutputExt    `json:"txOutputsExt"`
-	ContractRequests  []*InvokeRequest `json:"contractRequests"`
-	Initiator         string           `json:"initiator"`
-	AuthRequire       []string         `json:"authRequire"`
-	InitiatorSigns    []SignatureInfo  `json:"initiatorSigns"`
-	AuthRequireSigns  []SignatureInfo  `json:"authRequireSigns"`
-	ReceivedTimestamp int64            `json:"receivedTimestamp"`
-	ModifyBlock       ModifyBlock      `json:"modifyBlock"`
+	Txid              HexID            `json:"txid,omitempty"`
+	Blockid           HexID            `json:"blockid,omitempty"`
+	TxInputs          []TxInput        `json:"txInputs,omitempty"`
+	TxOutputs         []TxOutput       `json:"txOutputs,omitempty"`
+	Desc              string           `json:"desc,omitempty"`
+	Nonce             string           `json:"nonce,omitempty"`
+	Timestamp         int64            `json:"timestamp,omitempty"`
+	Version           int32            `json:"version,omitempty"`
+	Autogen           bool             `json:"autogen,omitempty"`
+	Coinbase          bool             `json:"coinbase,omitempty"`
+	VoteCoinbase      bool             `json:"voteCoinbase,omitempty"`
+	TxInputsExt       []TxInputExt     `json:"txInputsExt,omitempty"`
+	TxOutputsExt      []TxOutputExt    `json:"txOutputsExt,omitempty"`
+	ContractRequests  []*InvokeRequest `json:"contractRequests,omitempty"`
+	Initiator         string           `json:"initiator,omitempty"`
+	AuthRequire       []string         `json:"authRequire,omitempty"`
+	InitiatorSigns    []SignatureInfo  `json:"initiatorSigns,omitempty"`
+	AuthRequireSigns  []SignatureInfo  `json:"authRequireSigns,omitempty"`
+	ReceivedTimestamp int64            `json:"receivedTimestamp,omitempty"`
+	ModifyBlock       ModifyBlock      `json:"modifyBlock,omitempty"`
 }
 
 type ModifyBlock struct {
-	Marked          bool   `json:"marked"`
-	EffectiveHeight int64  `json:"effectiveHeight"`
-	EffectiveTxid   string `json:"effectiveTxid"`
+	Marked          bool   `json:"marked,omitempty"`
+	EffectiveHeight int64  `json:"effectiveHeight,omitempty"`
+	EffectiveTxid   string `json:"effectiveTxid,omitempty"`
 }
 
 // BigInt big int
@@ -527,4 +527,40 @@ func SumHash(tx *pb.Transaction) error {
 	fmt.Println("txid:", hex.EncodeToString(txid))
 
 	return nil
+}
+
+func FromSimpleTx(tx *pb.Transaction) *Transaction {
+	t := &Transaction{
+		Txid:      tx.Txid,
+		Blockid:   tx.Blockid,
+		Timestamp: tx.Timestamp,
+		Initiator: tx.Initiator,
+	}
+	for _, output := range tx.TxOutputs {
+		t.TxOutputs = append(t.TxOutputs, TxOutput{
+			Amount: FromAmountBytes(output.Amount),
+			ToAddr: string(output.ToAddr),
+		})
+	}
+	return t
+}
+
+func FromSimpleTxs(txs []*pb.Transaction) []*Transaction {
+	tempTxs := []*Transaction{}
+	for _, v := range txs {
+		tx := &Transaction{
+			Txid:      v.Txid,
+			Blockid:   v.Blockid,
+			Timestamp: v.Timestamp,
+			Initiator: v.Initiator,
+		}
+		for _, output := range v.TxOutputs {
+			tx.TxOutputs = append(tx.TxOutputs, TxOutput{
+				Amount: FromAmountBytes(output.Amount),
+				ToAddr: string(output.ToAddr),
+			})
+		}
+		tempTxs = append(tempTxs, tx)
+	}
+	return tempTxs
 }
