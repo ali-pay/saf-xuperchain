@@ -775,6 +775,9 @@ func (uv *UtxoVM) SelectUtxos(fromAddr string, fromPubKey string, totalNeed *big
 		for it.Next() {
 			key := append([]byte{}, it.Key()...)
 			uBinary := it.Value()
+			if len(uBinary) == 0 {
+				continue
+			}
 			uItem := &UtxoItem{}
 			uErr := uItem.Loads(uBinary)
 			if uErr != nil {
@@ -2311,6 +2314,9 @@ func (uv *UtxoVM) GetFrozenBalance(addr string) (*big.Int, error) {
 	defer it.Release()
 	for it.Next() {
 		uBinary := it.Value()
+		if len(uBinary) == 0 {
+			continue
+		}
 		uItem := &UtxoItem{}
 		uErr := uItem.Loads(uBinary)
 		if uErr != nil {
@@ -2337,6 +2343,9 @@ func (uv *UtxoVM) GetBalanceDetail(addr string) ([]*pb.TokenFrozenDetail, error)
 	defer it.Release()
 	for it.Next() {
 		uBinary := it.Value()
+		if len(uBinary) == 0 {
+			continue
+		}
 		uItem := &UtxoItem{}
 		uErr := uItem.Loads(uBinary)
 		if uErr != nil {
@@ -2591,6 +2600,9 @@ func (uv *UtxoVM) QueryUtxoRecord(accountName string, displayCount int64) (*pb.U
 	frozenItem := []*pb.UtxoKey{}
 
 	for it.Next() {
+		if len(it.Value()) == 0 {
+			continue
+		}
 		key := append([]byte{}, it.Key()...)
 		utxoItem := new(UtxoItem)
 		uErr := utxoItem.Loads(it.Value())
@@ -2686,11 +2698,11 @@ func (uv *UtxoVM) QueryAccountTxs(accountName string, pageNum, displayCount int6
 		keyTuple := bytes.Split(key, []byte("_"))          //Uaddr_&time_txid
 		txid, err := hex.DecodeString(string(keyTuple[2])) //最后一个就是txid
 		if err != nil {
-			return txs, err
+			return nil, err
 		}
 		tx, err := uv.ledger.QueryTransaction(txid)
 		if err != nil {
-			return txs, err
+			return nil, err
 		}
 
 		//简化输出
@@ -2701,13 +2713,40 @@ func (uv *UtxoVM) QueryAccountTxs(accountName string, pageNum, displayCount int6
 			Timestamp: tx.Timestamp,
 			TxOutputs: make([]*pb.TxOutput, 0),
 		}
+
+		//交易输出
 		for _, v := range tx.TxOutputs {
-			if string(v.ToAddr) == tx.Initiator {
-				continue
-			}
+			//忽略找零
+			//if string(v.ToAddr) == tx.Initiator {
+			//	continue
+			//}
 			simpleTx.TxOutputs = append(simpleTx.TxOutputs, &pb.TxOutput{
 				Amount: v.Amount,
 				ToAddr: v.ToAddr,
+			})
+		}
+
+		//系统交易（挖矿或投票）
+		if simpleTx.Initiator == "" {
+			simpleTx.Initiator = "System"
+		}
+
+		//todo 该笔交易所在区块，暂时用区块id这个字段代替先
+		block, err := uv.ledger.QueryBlock(tx.Blockid)
+		if err != nil {
+			return nil, err
+		}
+		blockNum := hex.EncodeToString([]byte(strconv.FormatInt(block.Height, 10)))
+		simpleTx.Blockid, err = hex.DecodeString(blockNum)
+		if err != nil {
+			return nil, err
+		}
+
+		//交易输入
+		for _, v := range tx.TxInputs {
+			simpleTx.TxInputs = append(simpleTx.TxInputs, &pb.TxInput{
+				Amount:   v.Amount,
+				FromAddr: v.FromAddr,
 			})
 		}
 

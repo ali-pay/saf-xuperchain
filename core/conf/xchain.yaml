@@ -55,7 +55,7 @@ utxo:
   cachesize: 2000000
   # GenerateTx的临时锁定期限，默认是60秒
   tmplockSeconds: 60
-  #单个块的合约执行的总时间(单位ms)
+  # 单个块的合约执行的总时间(单位ms)
   contractExecutionTime: 500
 
 kernel:
@@ -94,6 +94,7 @@ pluginConfPath: "./conf/plugins.conf"
 # 是否启用p2p核心节点直连
 coreConnection: false
 
+# 交易id在缓存池的过期时间
 txidCacheExpiredTime: "10s"
 
 # 是否压缩交易/区块
@@ -111,9 +112,13 @@ prune:
 # wasm合约配置
 wasm:
   driver: "xvm"
+  # 允许升级合约
   enableUpgrade: true
   xvm:
     optLevel: 0
 
 # 是否开启默认的XEndorser背书服务
 enableXEndorser: true
+
+# 开启事件订阅服务
+pubsubService: true
