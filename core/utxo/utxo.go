@@ -197,10 +197,10 @@ func GenUtxoKeyWithPrefix(addr []byte, txid []byte, offset int32) string {
 	return pb.UTXOTablePrefix + baseUtxoKey
 }
 
-//address_time_txid
+//address_&time_txid 选择&作为前缀符号，它accii码中比较靠前
 func GenUtxoTimeKey(utxoKey string) string {
 	arr := strings.Split(utxoKey, "_")
-	return fmt.Sprintf("%s_%d_%s", arr[0], time.Now().UnixNano(), arr[1])
+	return fmt.Sprintf("%s_&%d_%s", arr[0], time.Now().UnixNano(), arr[1])
 }
 
 // checkInputEqualOutput 校验交易的输入输出是否相等
@@ -2666,15 +2666,13 @@ func (uv *UtxoVM) QueryAccountTxs(accountName string, pageNum, displayCount int6
 	//偏移量
 	count := pageNum * displayCount
 
-	addrPrefix := fmt.Sprintf("%s%s_159", pb.UTXOTablePrefix, accountName)
+	//通过前缀查找
+	addrPrefix := fmt.Sprintf("%s%s_&", pb.UTXOTablePrefix, accountName)
 	it := uv.ldb.NewIteratorWithPrefix([]byte(addrPrefix))
 	defer it.Release()
 
-	//让索引指向最后一条数据
-	it.Last()
-
 	//逆序查询
-	for it.Last(); it.Prev(); {
+	for it.Last(); it.Key() != nil; it.Prev() {
 		if count--; count < 0 {
 			break
 		}
@@ -2685,7 +2683,7 @@ func (uv *UtxoVM) QueryAccountTxs(accountName string, pageNum, displayCount int6
 
 		//根据交易id查询
 		key := append([]byte{}, it.Key()...)
-		keyTuple := bytes.Split(key, []byte("_"))          //Uaddr_time_txid
+		keyTuple := bytes.Split(key, []byte("_"))          //Uaddr_&time_txid
 		txid, err := hex.DecodeString(string(keyTuple[2])) //最后一个就是txid
 		if err != nil {
 			return txs, err
