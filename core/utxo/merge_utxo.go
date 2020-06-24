@@ -31,9 +31,6 @@ func (uv *UtxoVM) SelectUtxosBySize(fromAddr string, fromPubKey string, needLock
 	defer it.Release()
 
 	for it.Next() {
-		if len(it.Value()) == 0 {
-			continue
-		}
 		key := append([]byte{}, it.Key()...)
 		utxoItem := new(UtxoItem)
 		// 反序列化utxoItem

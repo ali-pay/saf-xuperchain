@@ -25,8 +25,6 @@ func NewAccountCommand(cli *Cli) *cobra.Command {
 	c.cmd.AddCommand(NewAccountNewCommand(cli))
 	c.cmd.AddCommand(NewAccountContractsCommand(cli))
 	c.cmd.AddCommand(NewAccountQueryCommand(cli))
-	c.cmd.AddCommand(NewAccountTxsQueryCommand(cli))
-
 	return c.cmd
 }
 
