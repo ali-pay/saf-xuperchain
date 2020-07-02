@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
@@ -58,7 +59,7 @@ func (c *MultisigCheckCommand) check() error {
 	}
 
 	// print tx
-	t := FromPBTx(tx)
+	t := utils.FullTx(tx)
 	output, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		fmt.Println(err)

@@ -144,6 +144,11 @@ func filterForBlockEvent(payload []byte, v *pb.Event) (bool, bool) {
 	metaData := v.GetBlockStatus()
 	needContent := request.GetNeedContent()
 
+	//订阅所有矿工
+	if request.GetProposer() == "" {
+		request.Proposer = metaData.GetProposer()
+	}
+
 	if request.GetBcname() == metaData.GetBcname() &&
 		request.GetProposer() == metaData.GetProposer() &&
 		request.GetStartHeight() <= metaData.GetHeight() &&

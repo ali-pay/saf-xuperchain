@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 
 	"github.com/spf13/cobra"
 
@@ -49,7 +50,7 @@ func (s *StatusCommand) printXchainStatus(ctx context.Context) error {
 	if reply.Header.Error != pb.XChainErrorEnum_SUCCESS {
 		return errors.New(reply.Header.Error.String())
 	}
-	status := FromSystemStatusPB(reply.GetSystemsStatus())
+	status := utils.FromSystemStatusPB(reply.GetSystemsStatus())
 	output, err := json.MarshalIndent(status, "", "  ")
 	if err != nil {
 		fmt.Println(err)

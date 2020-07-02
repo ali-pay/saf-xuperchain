@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -76,7 +77,7 @@ func (b *BlockCommand) queryBlock(ctx context.Context, blockid string) error {
 	if block.Block == nil {
 		return errors.New("block not found")
 	}
-	iblock := FromInternalBlockPB(block.Block)
+	iblock := utils.FromInternalBlockPB(block.Block)
 	output, err := json.MarshalIndent(iblock, "", "  ")
 	if err != nil {
 		fmt.Println(err)
@@ -104,7 +105,7 @@ func (b *BlockCommand) queryBlockByHeight(ctx context.Context, height int64) err
 	if block.Block == nil {
 		return errors.New("block not found")
 	}
-	iblock := FromInternalBlockPB(block.Block)
+	iblock := utils.FromInternalBlockPB(block.Block)
 	output, err := json.MarshalIndent(iblock, "", "  ")
 	if err != nil {
 		fmt.Println(err)

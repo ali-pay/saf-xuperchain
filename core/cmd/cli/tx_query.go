@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 
 	"github.com/spf13/cobra"
 
@@ -70,7 +71,7 @@ func (t *TxQueryCommand) queryTx(ctx context.Context, txid string) error {
 	if reply.Tx == nil {
 		return errors.New("tx not found")
 	}
-	tx := FromPBTx(reply.Tx)
+	tx := utils.FullTx(reply.Tx)
 	output, err := json.MarshalIndent(tx, "", "  ")
 	if err != nil {
 		fmt.Println(err)

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -384,7 +385,7 @@ func (c *CommTrans) Transfer(ctx context.Context) error {
 		return err
 	}
 	if c.DebugTx {
-		ttx := FromPBTx(tx)
+		ttx := utils.FullTx(tx)
 		out, _ := json.MarshalIndent(ttx, "", "  ")
 		fmt.Println(string(out))
 		return nil
@@ -622,7 +623,7 @@ func (c *CommTrans) genTxFile(tx *pb.Transaction) error {
 
 func printTx(tx *pb.Transaction) error {
 	// print tx
-	t := FromPBTx(tx)
+	t := utils.FullTx(tx)
 	output, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		return err

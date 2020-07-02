@@ -1449,6 +1449,11 @@ func (uv *UtxoVM) doTxAsync(tx *pb.Transaction) error {
 //校验转账手续费
 func (uv *UtxoVM) VerifyTxFee(tx *pb.Transaction) bool {
 
+	//联盟链不需要手续费
+	if uv.GetTransferFeeAmount() == 0 {
+		return true
+	}
+
 	//普通转账
 	//1.可以转账给别人，但必须有手续费
 	//2.没有手续费的收款人必须是自己
@@ -1469,6 +1474,8 @@ func (uv *UtxoVM) VerifyTxFee(tx *pb.Transaction) bool {
 			if string(v.ToAddr) != tx.Initiator {
 				return false
 			}
+			//todo 需要限制重复转账给自己
+
 		}
 		return true
 	}
@@ -1484,14 +1491,7 @@ func (uv *UtxoVM) VerifyTxFee(tx *pb.Transaction) bool {
 			return true
 		}
 	}
-	//无币模式的判断
-	for _, v := range tx.TxOutputs {
-		amount := big.NewInt(0).SetBytes(v.Amount)
-		if amount.Int64() != 0 {
-			return false
-		}
-	}
-	return true
+	return false
 }
 
 // VerifyTx check the tx signature and permission

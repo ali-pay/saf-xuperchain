@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 
 	"github.com/spf13/cobra"
 
@@ -46,7 +47,7 @@ func (c *VoteCommand) addFlags() {
 }
 
 func (c *VoteCommand) vote(ctx context.Context, txid string) error {
-	contractDesc := ContractDesc{
+	contractDesc := utils.ContractDesc{
 		Module: "proposal",
 		Method: "Vote",
 		Args: map[string]interface{}{

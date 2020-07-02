@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 
 	"github.com/spf13/cobra"
 
@@ -91,14 +92,14 @@ func (c *NativeActivateCommand) run(ctx context.Context, pluginName string, acti
 	if c.triggerHeight == 0 {
 		c.triggerHeight = c.stopVoteHeight + 1
 	}
-	contractDesc := ContractDesc{
+	contractDesc := utils.ContractDesc{
 		Module: "proposal",
 		Method: "Propose",
 		Args: map[string]interface{}{
 			"min_vote_percent": c.minVotePercent,
 			"stop_vote_height": c.stopVoteHeight,
 		},
-		Trigger: TriggerDesc{
+		Trigger: utils.TriggerDesc{
 			Module: "native",
 			Method: action,
 			Args: map[string]interface{}{
