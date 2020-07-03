@@ -31,7 +31,7 @@
             "alternate_interval": "10000",
             "term_interval": "20000",
             "block_num": "5",
-            "vote_unit_price": "1",
+            "vote_unit_price": "100000000",
             "init_proposer": {
                 "1": [
                     "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN"

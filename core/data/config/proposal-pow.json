@@ -3,10 +3,10 @@
   "method": "Propose",
   "args" : {
     "min_vote_percent": 51,
-    "stop_vote_height": 5800
+    "stop_vote_height": 99998
   },
   "trigger": {
-    "height": 5810,
+    "height": 99999,
     "module": "consensus",
     "method": "update_consensus",
     "args" : {

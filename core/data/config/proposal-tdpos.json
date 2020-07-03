@@ -3,10 +3,10 @@
   "method": "Propose",
   "args" : {
     "min_vote_percent": 51,
-    "stop_vote_height": 99
+    "stop_vote_height": 99998
   },
   "trigger": {
-    "height": 100,
+    "height": 99999,
     "module": "consensus",
     "method": "update_consensus",
     "args" : {
@@ -14,11 +14,11 @@
       "config": {
         "version":"2",
         "proposer_num":"2",
-        "period":"3000",
-        "alternate_interval":"6000",
-        "term_interval":"9000",
-        "block_num":"20",
-        "vote_unit_price":"1",
+        "period": "10000",
+        "alternate_interval": "10000",
+        "term_interval": "20000",
+        "block_num":"5",
+        "vote_unit_price":"100000000",
         "init_proposer": {
           "1":["dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN", "xx"]
         }
