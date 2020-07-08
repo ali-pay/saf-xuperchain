@@ -2,7 +2,7 @@
     "version": "1",
     "predistribution": [
         {
-            "address": "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN",
+            "address": "MOSDSTZFnmgoBy7K1xMYwPy2r4h1YtDgZJ4V",
             "quota": "1000000000000"
         }
     ],
@@ -34,7 +34,7 @@
             "vote_unit_price": "1000000000",
             "init_proposer": {
                 "1": [
-                    "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN"
+                    "MOSDSTZFnmgoBy7K1xMYwPy2r4h1YtDgZJ4V"
                 ]
             },
             "init_proposer_neturl": {

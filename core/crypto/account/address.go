@@ -39,11 +39,22 @@ func GetAddressFromPublicKey(pub *ecdsa.PublicKey) (string, error) {
 		return "", fmt.Errorf("This cryptography[%v] has not been supported yet", pub.Params().Name)
 	}
 
-	bufVersion := []byte{byte(nVersion)}
+	//bufVersion := []byte{byte(nVersion)}
+	//
+	//strSlice := make([]byte, len(bufVersion)+len(OutputRipemd160))
+	//copy(strSlice, bufVersion)
+	//copy(strSlice[len(bufVersion):], OutputRipemd160)
 
-	strSlice := make([]byte, len(bufVersion)+len(OutputRipemd160))
-	copy(strSlice, bufVersion)
-	copy(strSlice[len(bufVersion):], OutputRipemd160)
+	//todo 取消前缀的数组hash,修改成直接将前缀拼接在地址上
+	prefix := []byte("MOS")
+	bufVersion := []byte{byte(nVersion)}
+	pl := len(prefix)
+	bl := len(bufVersion)
+	ol := len(OutputRipemd160)
+	strSlice := make([]byte, pl+bl+ol)
+	copy(strSlice, prefix)
+	copy(strSlice[pl:], bufVersion)
+	copy(strSlice[pl+bl:], OutputRipemd160)
 
 	//using double SHA256 for future risks
 	checkCode := hash.DoubleSha256(strSlice)
@@ -55,16 +66,16 @@ func GetAddressFromPublicKey(pub *ecdsa.PublicKey) (string, error) {
 
 	//使用base58编码，手写不容易出错。
 	//相比Base64，Base58不使用数字"0"，字母大写"O"，字母大写"I"，和字母小写"l"，以及"+"和"/"符号。
-	strEnc := base58.Encode(slice)
+	strEnc := base58.Encode(slice[4:])
 
-	return strEnc, nil
+	return string(prefix) + strEnc, nil
 }
 
 // VerifyAddressUsingPublicKey 验证钱包地址是否和指定的公钥match
 // 如果成功，返回true和对应的密码学标记位；如果失败，返回false和默认的密码学标记位0
 func VerifyAddressUsingPublicKey(address string, pub *ecdsa.PublicKey) (bool, uint8) {
 	//base58反解回byte[]数组
-	slice := base58.Decode(address)
+	slice := base58.Decode(address[4:])
 
 	//检查是否是合法的base58编码
 	if len(slice) < 1 {
@@ -74,11 +85,13 @@ func VerifyAddressUsingPublicKey(address string, pub *ecdsa.PublicKey) (bool, ui
 	byteVersion := slice[:1]
 	nVersion := uint8(byteVersion[0])
 
+	//byteVersion := slice[:4]
+	//nVersion := uint8(byteVersion[3])
+
 	realAddress, err := GetAddressFromPublicKey(pub)
 	if err != nil {
 		return false, 0
 	}
-
 	if realAddress == address {
 		return true, nVersion
 	}

@@ -60,7 +60,8 @@ func (c *AccountNewkeysCommand) createAccount() error {
 		// version := uint8(intversion)
 		return c.createMnmAccount(c.strength, c.lang)
 	}
-	return c.createSimpleAccount()
+	//return c.createSimpleAccount()
+	return c.createMnmAccount(3, c.lang)
 }
 
 // create a simple account, without mnemonic

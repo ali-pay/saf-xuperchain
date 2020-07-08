@@ -15,11 +15,11 @@ import (
 var (
 	rpcEndpoint = flag.String("gateway_endpoint", "localhost:37101", "endpoint of grpc service forward to")
 	// http port
-	httpEndpoint = flag.String("http_endpoint", ":8098", "endpoint of http service")
+	httpEndpoint = flag.String("http_endpoint", ":8123", "endpoint of http service")
 	// enable default xendorser
-	enableEndorser = flag.Bool("enable_endorser", false, "is enable xendorser")
+	enableEndorser = flag.Bool("enable_endorser", true, "is enable xendorser")
 	// enable CROS
-	allowCROS = flag.Bool("allow_cros", false, "is allow Cross-origin resource sharing requests")
+	allowCROS = flag.Bool("allow_cros", true, "is allow Cross-origin resource sharing requests")
 
 	// InitialWindowSize window size
 	InitialWindowSize int32 = 128 << 10
