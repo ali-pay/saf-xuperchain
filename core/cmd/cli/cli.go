@@ -9,12 +9,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -373,77 +373,6 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 		AuthRequire: tx.AuthRequire,
 	}
 
-	//通过desc的内容来判断是否为转账操作
-	if string(opt.Desc) == "transfer from console" {
-		preExeRPCReq.Requests = append(preExeRPCReq.Requests, &pb.InvokeRequest{
-			ModuleName: "transfer",
-			Amount:     opt.Fee,
-		})
-
-	} else { //其他操作处理
-
-		//读取desc的内容
-		desc := new(descWraper)
-		err := json.Unmarshal(opt.Desc, desc)
-		if err != nil {
-			return nil, err
-		}
-
-		//拦截不应该由transfer发起的请求
-		switch desc.Module {
-		case "tdpos", "proposal", "kernel":
-		default:
-			return nil, errors.New("request is invalid")
-			//return nil, errors.New("desc is invalid")
-		}
-
-		//创建平行链时的链名
-		var bcname string
-		name, ok := desc.Args["name"]
-		if ok {
-			bcname = name.(string)
-		}
-
-		//只能转账给自己和平行链
-		if initAddr != opt.To && opt.To != bcname {
-			return nil, errors.New("only transfer to yourself")
-		}
-
-		//允许的请求列表
-		modules := map[string][]string{
-			"tdpos":    {"nominate_candidate", "revoke_candidate", "vote", "revoke_vote", "check_validater"},
-			"proposal": {"Propose", "Thaw", "CreateTrigger", "Vote"},
-			"kernel": {
-				"CreateBlockChain",
-				"UpdateMaxBlockSize",
-				"UpdateReservedContract",
-				"UpdateForbiddenContract",
-				"UpdateBlockChainData",
-				"UpdateNewAccountResourceAmount",
-				"UpdateTransferFeeAmount",
-				"UpdateIrreversibleSlideWindow",
-				"UpdateGasPrice",
-			},
-		}
-
-	allow:
-		for module, methods := range modules {
-			for _, method := range methods {
-				if module == desc.Module && method == desc.Method {
-					//构造请求
-					preExeRPCReq.Requests = append(preExeRPCReq.Requests, &pb.InvokeRequest{
-						ModuleName: module,
-						Args: map[string][]byte{
-							"to": []byte(opt.To), //收款人地址
-						},
-						Amount: opt.Fee, //创建平行链也要手续费
-					})
-					break allow
-				}
-			}
-		}
-	}
-
 	preExeRes, err := client.PreExec(ctx, preExeRPCReq)
 	if err != nil {
 		return nil, err
@@ -453,7 +382,23 @@ func assembleTxSupportAccount(ctx context.Context, client pb.XchainClient, opt *
 	tx.TxInputsExt = preExeRes.GetResponse().GetInputs()
 	tx.TxOutputsExt = preExeRes.GetResponse().GetOutputs()
 
-	//构造交易放到手续费判断下面来，避免服务端的余额判断错误
+	//需要支付手续费
+	gasUsed := preExeRes.GetResponse().GetGasUsed()
+	fmt.Printf("The gas you cousume is: %v\n", gasUsed)
+	if gasUsed > 0 {
+		if opt.Fee != "" && opt.Fee != "0" {
+			fee, _ := strconv.ParseInt(opt.Fee, 10, 64)
+			if fee < gasUsed {
+				return nil, errors.New("Fee not enough")
+			}
+		} else {
+			return nil, errors.New("You need add fee")
+		}
+		fmt.Printf("The fee you pay is: %v\n", opt.Fee)
+	} else if opt.Fee != "" && opt.Fee != "0" && gasUsed <= 0 {
+		fmt.Printf("The fee you pay is: %v\n", opt.Fee)
+	}
+
 	// 组装input 和 剩余output
 	txInputs, deltaTxOutput, err := assembleTxInputsSupportAccount(ctx, client, opt, totalNeed)
 	if err != nil {
