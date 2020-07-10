@@ -223,7 +223,7 @@ func (no *Node) Start() {
 			return
 		case <-t.C:
 			no.log.Trace("RoutingTable", "size", no.kdht.RoutingTable().Size())
-			no.kdht.RoutingTable().Print()
+			//no.kdht.RoutingTable().Print()
 			if no.isStorePeers {
 				ret := no.persistPeersToDisk()
 				if !ret {

@@ -9,9 +9,9 @@ log:
   filename: xchain
   fmt: logfmt
   # 是否打印命令行工具端口
-  console: true
+  console: false
   # 日志等级
-  level: info
+  level: error
 
 # RPC 服务暴露的端口
 tcpServer:
@@ -60,9 +60,9 @@ utxo:
 
 kernel:
   # minNewChainAmount 设置创建平行链时最少要转多少钱到同链名address
-  minNewChainAmount: "100"
+  minNewChainAmount: "1000000000000"
   newChainWhiteList:
-    - dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN: true
+    - MOSV4sWnh6AoujDALobKUSPxDW9ihbE5DLoa: true
 
 # 管理native合约的配置
 native:
@@ -73,7 +73,7 @@ native:
     whiteList:
       enable: false
       addresses:
-        - dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN
+        - MOSV4sWnh6AoujDALobKUSPxDW9ihbE5DLoa
 
   # docker相关配置
   docker:
