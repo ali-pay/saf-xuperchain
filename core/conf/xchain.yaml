@@ -11,7 +11,7 @@ log:
   # 是否打印命令行工具端口
   console: false
   # 日志等级
-  level: error
+  level: debug
 
 # RPC 服务暴露的端口
 tcpServer:
@@ -62,7 +62,7 @@ kernel:
   # minNewChainAmount 设置创建平行链时最少要转多少钱到同链名address
   minNewChainAmount: "1000000000000"
   newChainWhiteList:
-    - MOSV4sWnh6AoujDALobKUSPxDW9ihbE5DLoa: true
+    - SAFn9w5b2nMxsj2e8tsTT9n9G89g4e3xm635: true
 
 # 管理native合约的配置
 native:
@@ -73,7 +73,7 @@ native:
     whiteList:
       enable: false
       addresses:
-        - MOSV4sWnh6AoujDALobKUSPxDW9ihbE5DLoa
+        - SAFn9w5b2nMxsj2e8tsTT9n9G89g4e3xm635
 
   # docker相关配置
   docker:

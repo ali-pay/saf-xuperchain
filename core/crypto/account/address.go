@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	prefix = "MOS"
+	prefix = "SAF"
 )
 
 // GetAddressFromPublicKey 返回33位长度的地址
