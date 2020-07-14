@@ -52,3 +52,11 @@ export GOFLAGS=-mod=vendor
 XCHAIN_ROOT := ${PWD}/core
 export XCHAIN_ROOT
 PATH := ${PWD}/core/xvm/compile/wabt/build:$(PATH)
+
+plugin:
+	PLATFORM=$(PLATFORM) ./build-plugin.sh
+export GO111MODULE=on
+export GOFLAGS=-mod=vendor
+XCHAIN_ROOT := ${PWD}/core
+export XCHAIN_ROOT
+PATH := ${PWD}/core/xvm/compile/wabt/build:$(PATH)
