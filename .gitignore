@@ -38,7 +38,7 @@ front/
 visual/
 cc/
 .github/
-!vendor/
+!vendor/*
 CONTRIBUTING.md
 CONTRIBUTING_CN.md
 wasm2c

@@ -492,34 +492,41 @@ func (k *Kernel) Run(desc *contract.TxDesc) error {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
 
-	//该合约只能由管理员调用
-
-	//数据会根据配置文件而动态改变
-	//v, ok := k.newChainWhiteList[desc.Tx.Initiator]
-	//if !ok || !v {
-	//	k.log.Error("your address not in whitelist, can not invoke Kernel Contract", "whitelist", k.newChainWhiteList)
-	//	return ErrAddrNotInWhiteList
-	//}
-
-	//通过创世配置获取管理员地址
-	admins := k.context.LedgerObj.GenesisBlock.GetConfig().Predistribution
-	//if len(admins) == 0 || desc.Tx.Initiator != admins[0].Address {
-	//	k.log.Error("you can not invoke Kernel Contract", "only admin can doit", admins[0].Address)
-	//	return ErrAddrNotInWhiteList
-	//}
+	//需要冻结全网50%的资产才能调用
+	utxoTotal := k.context.UtxoMeta.GetUtxoTotal()
+	utxoTotal.Div(utxoTotal, big.NewInt(2))
+	if utxoTotal.Int64() <= 0 {
+		return errors.New("total assets of the current chain is less than 0")
+	}
 	allow := false
-	as := []string{}
-	for _, v := range admins {
-		if v.Address == desc.Tx.Initiator {
+	for _, output := range desc.Tx.TxOutputs {
+		amount := big.NewInt(0).SetBytes(output.Amount)
+		if amount.Cmp(utxoTotal) >= 0 && output.FrozenHeight > k.context.LedgerObj.GetMeta().TrunkHeight {
 			allow = true
 			break
 		}
-		as = append(as, v.Address)
 	}
 	if !allow {
-		k.log.Error("you can not invoke Kernel Contract", "only admin can doit", as)
-		return ErrAddrNotInWhiteList
+		return errors.New("your amount not enough")
 	}
+
+	//通过创世配置获取管理员地址
+	//admins := k.context.LedgerObj.GenesisBlock.GetConfig().Predistribution
+	//if len(admins) != 0 {
+	//	allow := false
+	//	as := []string{}
+	//	for _, v := range admins {
+	//		if v.Address == desc.Tx.Initiator {
+	//			allow = true
+	//			break
+	//		}
+	//		as = append(as, v.Address)
+	//	}
+	//	if !allow {
+	//		k.log.Error("you can not invoke Kernel Contract", "only admin can doit", as)
+	//		return errors.New("address not in genesis config list")
+	//	}
+	//}
 
 	switch desc.Method {
 	case "CreateBlockChain":
