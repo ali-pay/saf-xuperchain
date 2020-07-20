@@ -496,7 +496,7 @@ func (k *Kernel) Run(desc *contract.TxDesc) error {
 	utxoTotal := k.context.UtxoMeta.GetUtxoTotal()
 	utxoTotal.Div(utxoTotal, big.NewInt(2))
 	if utxoTotal.Int64() <= 0 {
-		return errors.New("total assets of the current chain is less than 0")
+		return errors.New("totalutxo of chain is less than 0")
 	}
 	allow := false
 	for _, output := range desc.Tx.TxOutputs {
@@ -507,7 +507,8 @@ func (k *Kernel) Run(desc *contract.TxDesc) error {
 		}
 	}
 	if !allow {
-		return errors.New("your amount not enough")
+		return fmt.Errorf("your amount not enough, must be higher than: %s, and frozen height higher than: %d",
+			utxoTotal.String(), k.context.LedgerObj.GetMeta().TrunkHeight)
 	}
 
 	//通过创世配置获取管理员地址
@@ -544,11 +545,12 @@ func (k *Kernel) Run(desc *contract.TxDesc) error {
 			k.log.Warn("tx from addr not in whitelist to create blockchain", "disableCreateChainWhiteList", k.disableCreateChainWhiteList)
 			return ErrAddrNotInWhiteList
 		}
-		investment := desc.Tx.GetAmountByAddress(bcName)
-		k.log.Info("create blockchain", "chain", bcName, "investment", investment, "need", k.minNewChainAmount)
-		if investment.Cmp(k.minNewChainAmount) < 0 {
-			return ErrNoEnoughUTXO
-		}
+		//因为前面设置了有全网50%资产的账户才能调用该合约，所以不需要转给该链
+		//investment := desc.Tx.GetAmountByAddress(bcName)
+		//k.log.Info("create blockchain", "chain", bcName, "investment", investment, "need", k.minNewChainAmount)
+		//if investment.Cmp(k.minNewChainAmount) < 0 {
+		//	return ErrNoEnoughUTXO
+		//}
 		err = k.CreateBlockChain(bcName, []byte(bcData))
 		if err == ErrBlockChainExist { //暂时忽略
 			return nil

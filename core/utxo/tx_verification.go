@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/xuperchain/xuperchain/core/utils"
 	"math/big"
 	"strings"
 
@@ -445,6 +446,8 @@ func getGasLimitFromTx(tx *pb.Transaction) (int64, error) {
 
 // verifyContractTxAmount verify
 func (uv *UtxoVM) verifyContractTxAmount(tx *pb.Transaction) (bool, error) {
+	utils.PrintTx(tx)
+
 	amountOut := new(big.Int).SetInt64(0)
 	req := tx.GetContractRequests()
 	contractName, amountCon, err := txn.ParseContractTransferRequest(req)
@@ -458,7 +461,12 @@ func (uv *UtxoVM) verifyContractTxAmount(tx *pb.Transaction) (bool, error) {
 		}
 	}
 
+	fmt.Println("amountOut:",amountOut.String())
+	fmt.Println("contractName:",contractName)
+	fmt.Println("amountCon:",amountCon.String())
+
 	if amountOut.Cmp(amountCon) != 0 {
+		fmt.Println("amountOut not match amountCon")
 		return false, ErrContractTxAmout
 	}
 	return true, nil

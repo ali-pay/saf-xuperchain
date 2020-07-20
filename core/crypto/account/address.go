@@ -68,6 +68,7 @@ func GetAddressFromPublicKey(pub *ecdsa.PublicKey) (string, error) {
 // 如果成功，返回true和对应的密码学标记位；如果失败，返回false和默认的密码学标记位0
 func VerifyAddressUsingPublicKey(address string, pub *ecdsa.PublicKey) (bool, uint8) {
 
+	//todo 取消适配原版地址
 	//适配原版的地址
 	if len(address) == 33 {
 		address = prefix + address
