@@ -255,7 +255,7 @@ func (c *CommTrans) genInitiator() (string, error) {
 // GenTxOutputs 填充得到transaction的repeated TxOutput tx_outputs
 func (c *CommTrans) GenTxOutputs(gasUsed int64) ([]*pb.TxOutput, *big.Int, error) {
 	//默认转给自己
-	if c.To == "" {
+	if c.To == "" && c.Amount != "" {
 		c.To, _ = c.genInitiator()
 	}
 

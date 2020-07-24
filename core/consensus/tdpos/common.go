@@ -4,24 +4,27 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"math/big"
-	"sort"
-	"strconv"
-	"strings"
-
 	"github.com/xuperchain/xuperchain/core/common"
 	cons_base "github.com/xuperchain/xuperchain/core/consensus/base"
 	"github.com/xuperchain/xuperchain/core/contract"
 	"github.com/xuperchain/xuperchain/core/pb"
+	"math/big"
+	"sort"
+	"strconv"
+	"strings"
 )
 
 const minNominateProportion = 100000
 
 // miner 调度算法, 依据时间进行矿工节点调度
 func (tp *TDpos) minerScheduling(timestamp int64) (term int64, pos int64, blockPos int64) {
-	if timestamp < tp.initTimestamp {
+	//todo tdpos启动有几率延迟，要求不超过1秒
+	if tp.initTimestamp/1000000-timestamp/1000000 > 1000 {
 		return
 	}
+	//if timestamp < tp.initTimestamp {
+	//	return
+	//}
 	tp.log.Trace("getTermPos", "timestamp", timestamp, "inittimestamp", tp.initTimestamp)
 	// 每一轮的时间
 	termTime := tp.config.termInterval + (tp.config.proposerNum-1)*tp.config.alternateInterval +
@@ -156,7 +159,9 @@ func (tp *TDpos) getTermProposer(term int64) []*cons_base.CandidateInfo {
 			}
 			val = it.Value()
 		} else {
-			tp.log.Warn("TDpos getTermProposer query from table is nil", "tp.config.initProposer[1]", tp.config.initProposer[1])
+			for _, v := range tp.config.initProposer[1] {
+				tp.log.Warn("TDpos getTermProposer query from table is nil", "initProposer", v.Address)
+			}
 			return tp.config.initProposer[1]
 		}
 	}
@@ -167,7 +172,6 @@ func (tp *TDpos) getTermProposer(term int64) []*cons_base.CandidateInfo {
 		return nil
 	}
 	return proposers
-
 }
 
 // 生成当前轮的验证者名单

@@ -29,10 +29,10 @@ func (xc *XChainCore) GenerateVoteAward() ([]*pb.Transaction, error) {
 	//打印票数
 	for voter, ballot := range ballots {
 		if voter == "all" {
-			xc.log.Info("[Vote_Award] all ballots count", "ballots", ballots["all"])
+			xc.log.Debug("[Vote_Award] all ballots count", "ballots", ballots["all"])
 			continue
 		}
-		xc.log.Info("[Vote_Award] voter ballots count", "voter", voter, "ballot", ballot)
+		xc.log.Debug("[Vote_Award] voter ballots count", "voter", voter, "ballot", ballot)
 	}
 
 	//生成奖励
