@@ -53,7 +53,7 @@ func (xc *XChainCore) GenerateVoteAward() ([]*pb.Transaction, error) {
 		//投票奖励
 		voteAward := xc.Ledger.GenesisBlock.CalcVoteAward(tdpos.VoteAward, ratio)
 		ratioStr := fmt.Sprintf("%.16f", ratio)
-		xc.log.Info("[Vote_Award] calc vote award success", "voter", voter, "ratio", ratioStr, "award", voteAward)
+		xc.log.Debug("[Vote_Award] calc vote award success", "voter", voter, "ratio", ratioStr, "award", voteAward)
 
 		//奖励为0的不生成交易
 		if voteAward.Int64() == 0 {

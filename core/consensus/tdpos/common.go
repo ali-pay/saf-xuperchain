@@ -183,7 +183,7 @@ func (tp *TDpos) genTermProposer() ([]*cons_base.CandidateInfo, error) {
 		tp.log.Trace("genTermProposer ", "key", key, "value", value)
 		addr := strings.TrimPrefix(key, GenCandidateBallotsPrefix())
 		if value == 0 {
-			tp.log.Warn("genTermProposer continue", "key", key, "value", value)
+			//tp.log.Warn("genTermProposer continue", "key", key, "value", value)
 			return true
 		}
 		tmp := &termBallots{
@@ -196,7 +196,11 @@ func (tp *TDpos) genTermProposer() ([]*cons_base.CandidateInfo, error) {
 	})
 
 	if int64(termBallotSli.Len()) < tp.config.proposerNum {
-		tp.log.Error("Term publish proposer num less than config", "termVotes", termBallotSli)
+		proposers := make([]string, len(termBallotSli))
+		for i, v := range termBallotSli {
+			proposers[i] = v.Address
+		}
+		tp.log.Error("Term publish proposer num less than config", "termVotes", proposers)
 		return nil, ErrProposerNotEnough
 	}
 
