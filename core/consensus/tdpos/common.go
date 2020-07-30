@@ -156,9 +156,11 @@ func (tp *TDpos) getTermProposer(term int64) []*cons_base.CandidateInfo {
 			}
 			val = it.Value()
 		} else {
-			for _, v := range tp.config.initProposer[1] {
-				tp.log.Warn("TDpos getTermProposer query from table is nil", "initProposer", v.Address)
+			proposers := make([]string, len(tp.config.initProposer[1]))
+			for i, v := range tp.config.initProposer[1] {
+				proposers[i] = v.Address
 			}
+			tp.log.Warn("TDpos getTermProposer query from table is nil", "tp.config.initProposer", proposers)
 			return tp.config.initProposer[1]
 		}
 	}
