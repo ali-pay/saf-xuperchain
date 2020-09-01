@@ -1,6 +1,8 @@
-# 发生错误
-**jason-cn-dev：将该字段改成：ali-pay**
-**xuperchain：将该字段改成：saf-xuperchain**
+# 如果编译发生错误
+
+**1.jason-cn-dev：将该字段改成：ali-pay**
+
+**2.xuperchain：将该字段改成：saf-xuperchain**
 
 # About
 
