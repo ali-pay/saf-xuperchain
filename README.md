@@ -1,3 +1,7 @@
+# 发生错误
+**jason-cn-dev：将该字段改成：ali-pay**
+**xuperchain：将该字段改成：saf-xuperchain**
+
 # About
 
 This depository is a fork of xuperchain. Add transfer fee and mortgage reward.
