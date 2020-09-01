@@ -2,8 +2,8 @@
     "version" : "1"
     , "predistribution":[
         {
-            "address" : ""
-            , "quota" : ""
+            "address" : "SAFn9w5b2nMxsj2e8tsTT9n9G89g4e3xm635"
+            , "quota" : "1000000000000"
         }
     ]
     , "maxblocksize" : "128"
@@ -26,7 +26,7 @@
        "config": {
 			"defaultTarget": "22",
 			"adjustHeightGap": "10",
-			"expectedPeriod": "600",
+			"expectedPeriod": "15",
 			"maxTarget": "0"
        }
     },

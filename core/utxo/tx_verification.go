@@ -457,7 +457,6 @@ func (uv *UtxoVM) verifyContractTxAmount(tx *pb.Transaction) (bool, error) {
 			amountOut.Add(tmpAmount, amountOut)
 		}
 	}
-
 	if amountOut.Cmp(amountCon) != 0 {
 		return false, ErrContractTxAmout
 	}

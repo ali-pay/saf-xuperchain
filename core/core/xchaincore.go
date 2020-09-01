@@ -696,7 +696,8 @@ func (xc *XChainCore) doMiner() {
 			xc.log.Warn("[Minning] the mined blocked was attached to branch, no need to play")
 			return
 		}
-		xc.log.Info("[Minning] ConfirmBlock Success", "logid", header.Logid, "Height", meta.TrunkHeight+1)
+		//xc.log.Info("[Minning] ConfirmBlock Success", "logid", header.Logid, "Height", meta.TrunkHeight+1)
+		xc.log.Info("[Minning] ConfirmBlock Success", "Height", meta.TrunkHeight+1)
 	} else {
 		xc.log.Warn("[Minning] ConfirmBlock Fail", "logid", header.Logid, "confirm_status", confirmStatus)
 		err := xc.Utxovm.Walk(xc.Utxovm.GetLatestBlockid(), false)
@@ -826,8 +827,8 @@ func (xc *XChainCore) Miner() int {
 			}
 			xc.doMiner()
 		}
-		meta := xc.Ledger.GetMeta()
-		xc.log.Info("Minner", "genesis", fmt.Sprintf("%x", meta.RootBlockid), "last", fmt.Sprintf("%x", meta.TipBlockid), "height", meta.TrunkHeight, "utxovm", fmt.Sprintf("%x", xc.Utxovm.GetLatestBlockid()))
+		//meta := xc.Ledger.GetMeta()
+		//xc.log.Info("Minner", "genesis", fmt.Sprintf("%x", meta.RootBlockid), "last", fmt.Sprintf("%x", meta.TipBlockid), "height", meta.TrunkHeight, "utxovm", fmt.Sprintf("%x", xc.Utxovm.GetLatestBlockid()))
 		if xc.stopFlag {
 			break
 		}

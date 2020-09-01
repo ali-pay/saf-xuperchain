@@ -172,16 +172,11 @@ func (c *CommTrans) ReadPreExeReq(buf []byte) (*pb.InvokeRequest, error) {
 		return nil, nil
 	}
 
-	if params.InvokeRequest.ModuleName == "" && params.Module == "" {
-		return nil, errors.New("request can not be null")
-	}
-
-	if params.Module != "" {
-		params.ModuleName = params.Module
+	if params.InvokeRequest.ModuleName == "" {
+		return nil, nil
 	}
 
 	params.InvokeRequest.Args = make(map[string][]byte)
-	params.InvokeRequest.Args["to"] = []byte(c.To)
 	for k, v := range params.Args {
 		params.InvokeRequest.Args[k] = []byte(v)
 	}
@@ -259,6 +254,11 @@ func (c *CommTrans) genInitiator() (string, error) {
 
 // GenTxOutputs 填充得到transaction的repeated TxOutput tx_outputs
 func (c *CommTrans) GenTxOutputs(gasUsed int64) ([]*pb.TxOutput, *big.Int, error) {
+	//默认转给自己
+	if c.To == "" && c.Amount != "" {
+		c.To, _ = c.genInitiator()
+	}
+
 	// 组装转账的账户信息
 	account := &pb.TxDataAccount{
 		Address:      c.To,
@@ -539,15 +539,6 @@ func (c *CommTrans) postTx(ctx context.Context, tx *pb.Transaction) (string, err
 
 // GenerateMultisigGenRawTx for mulitisig gen cmd
 func (c *CommTrans) GenerateMultisigGenRawTx(ctx context.Context) error {
-
-	//不可转账给别人
-	from, err := c.genInitiator()
-	if err != nil {
-		return err
-	}
-	if c.To != "" && c.To != from {
-		return errors.New("only transfer to yourself")
-	}
 
 	tx, err := c.GenerateTx(ctx)
 	if err != nil {

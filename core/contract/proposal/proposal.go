@@ -440,7 +440,7 @@ func (prp *Proposal) runThaw(desc *contract.TxDesc, block *pb.InternalBlock) err
 	}
 
 	fromAddress := tx.TxInputs[0].FromAddr
-	fromAddressThaw := desc.Tx.TxInputs[0].FromAddr
+	fromAddressThaw := desc.Tx.Initiator
 	if string(fromAddress) != string(fromAddressThaw) {
 		prp.log.Warn("runThaw failed, fromAddress and fromAddressThaw not equal", "fromAddress", string(fromAddress),
 			"fromAddressThaw", string(fromAddressThaw))

@@ -28,8 +28,8 @@ protoc -I core/cmd/relayer/pb core/cmd/relayer/pb/relayer.proto \
 !
 
 # build wasm2c
-make -C core/xvm/compile/wabt -j 4
-cp core/xvm/compile/wabt/build/wasm2c ./
+#make -C core/xvm/compile/wabt -j 4
+#cp core/xvm/compile/wabt/build/wasm2c ./
 
 # build framework and tools
 function buildpkg() {
@@ -41,13 +41,13 @@ function buildpkg() {
     go build -o $output -ldflags "-X main.buildVersion=$buildVersion -X main.buildDate=$buildDate -X main.commitHash=$commitHash" $pkg
 }
 
-buildpkg xchain-cli github.com/xuperchain/xuperchain/core/cmd/cli
-buildpkg xchain github.com/xuperchain/xuperchain/core/cmd/xchain
-buildpkg xdev github.com/xuperchain/xuperchain/core/cmd/xdev
-buildpkg xchain-httpgw github.com/xuperchain/xuperchain/core/gateway
-buildpkg dump_chain github.com/xuperchain/xuperchain/core/test
-buildpkg event_client github.com/xuperchain/xuperchain/core/test/pubsub
-buildpkg relayer github.com/xuperchain/xuperchain/core/cmd/relayer/relayer
+#buildpkg xchain-cli github.com/xuperchain/xuperchain/core/cmd/cli
+#buildpkg xchain github.com/xuperchain/xuperchain/core/cmd/xchain
+#buildpkg xdev github.com/xuperchain/xuperchain/core/cmd/xdev
+#buildpkg xchain-httpgw github.com/xuperchain/xuperchain/core/gateway
+#buildpkg dump_chain github.com/xuperchain/xuperchain/core/test
+#buildpkg event_client github.com/xuperchain/xuperchain/core/test/pubsub
+#buildpkg relayer github.com/xuperchain/xuperchain/core/cmd/relayer/relayer
 
 # build plugins
 echo "OS:"${PLATFORM}
@@ -69,14 +69,14 @@ go build --buildmode=plugin -o core/plugins/p2p/p2p-p2pv2.so.1.0.0 github.com/xu
 # build output dir
 mkdir -p output
 output_dir=output
-mv xchain-cli xchain ${output_dir}
-mv xchain-httpgw ${output_dir}
-mv wasm2c ${output_dir}
-mv dump_chain ${output_dir}
-mv xdev ${output_dir}
-mv relayer ${output_dir}
+#mv xchain-cli xchain ${output_dir}
+#mv xchain-httpgw ${output_dir}
+#mv wasm2c ${output_dir}
+#mv dump_chain ${output_dir}
+#mv xdev ${output_dir}
+#mv relayer ${output_dir}
 cp -rf core/plugins ${output_dir}
-cp -rf core/data ${output_dir}
-cp -rf core/conf ${output_dir}
+#cp -rf core/data ${output_dir}
+#cp -rf core/conf ${output_dir}
 #cp -rf core/cmd/quick_shell/* ${output_dir}
-mkdir -p ${output_dir}/data/blockchain
+#mkdir -p ${output_dir}/data/blockchain

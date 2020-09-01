@@ -2,12 +2,12 @@
     "version": "1",
     "predistribution": [
         {
-            "address": "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN",
-            "quota": "100000000000000000000"
+            "address": "SAFn9w5b2nMxsj2e8tsTT9n9G89g4e3xm635",
+            "quota": "1000000000000"
         }
     ],
     "maxblocksize": "128",
-    "award": "1000000",
+    "award": "5000000000",
     "decimals": "8",
     "award_decay": {
         "height_gap": 31536000,
@@ -19,8 +19,8 @@
         "disk_rate": 0,
         "xfee_rate": 1
     },
-    "new_account_resource_amount": 1000,
-    "transfer_fee_amount": 1000,
+    "new_account_resource_amount": 100000000,
+    "transfer_fee_amount": 0,
     "genesis_consensus": {
         "name": "tdpos",
         "config": {
@@ -31,10 +31,10 @@
             "alternate_interval": "3000",
             "term_interval": "6000",
             "block_num": "5",
-            "vote_unit_price": "1",
+            "vote_unit_price": "1000000000",
             "init_proposer": {
                 "1": [
-                    "dpzuVdosQrF2kmzumhVeFQZa1aYcdgFpN"
+                    "SAFn9w5b2nMxsj2e8tsTT9n9G89g4e3xm635"
                 ]
             },
             "init_proposer_neturl": {

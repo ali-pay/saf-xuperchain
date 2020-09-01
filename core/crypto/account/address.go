@@ -16,6 +16,10 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 )
 
+var (
+	prefix = "SAF"
+)
+
 // GetAddressFromPublicKey 返回33位长度的地址
 func GetAddressFromPublicKey(pub *ecdsa.PublicKey) (string, error) {
 	if pub.X == nil || pub.Y == nil {
@@ -57,14 +61,15 @@ func GetAddressFromPublicKey(pub *ecdsa.PublicKey) (string, error) {
 	//相比Base64，Base58不使用数字"0"，字母大写"O"，字母大写"I"，和字母小写"l"，以及"+"和"/"符号。
 	strEnc := base58.Encode(slice)
 
-	return strEnc, nil
+	return prefix + strEnc, nil
 }
 
 // VerifyAddressUsingPublicKey 验证钱包地址是否和指定的公钥match
 // 如果成功，返回true和对应的密码学标记位；如果失败，返回false和默认的密码学标记位0
 func VerifyAddressUsingPublicKey(address string, pub *ecdsa.PublicKey) (bool, uint8) {
+
 	//base58反解回byte[]数组
-	slice := base58.Decode(address)
+	slice := base58.Decode(address[len(prefix):])
 
 	//检查是否是合法的base58编码
 	if len(slice) < 1 {
@@ -89,8 +94,9 @@ func VerifyAddressUsingPublicKey(address string, pub *ecdsa.PublicKey) (bool, ui
 // CheckAddressFormat 验证钱包地址是否是合法的格式
 // 如果成功，返回true和对应的密码学标记位；如果失败，返回false和默认的密码学标记位0
 func CheckAddressFormat(address string) (bool, uint8) {
+
 	//base58反解回byte[]数组
-	slice := base58.Decode(address)
+	slice := base58.Decode(address[len(prefix):])
 
 	//检查是否是合法的base58编码
 	if len(slice) < 1 {

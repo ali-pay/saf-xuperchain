@@ -846,56 +846,12 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 	// if no reserved request and user's request, return directly
 	// the operation of xmodel.NewXModelCache costs some resources
 	//if len(req.Requests) == 0 {
-	//	rsps := &pb.InvokeResponse{}
+	//	rsps := &pb.InvokeResponse{
+	//		//所有转账操作都需要手续费
+	//		GasUsed: uv.GetTransferFeeAmount(),
+	//	}
 	//	return rsps, nil
 	//}
-
-	//允许通过的请求
-	modules := []string{"transfer", "tdpos", "proposal", "kernel", "xkernel", "wasm", "native"}
-
-	allow := false
-	//判断是否为普通转账操作
-	for _, v := range req.Requests {
-		allow = false
-		//该请求是否允许
-		for _, module := range modules {
-			if module == v.ModuleName {
-				allow = true
-				break
-			}
-		}
-		//请求不被允许
-		if !allow {
-			return nil, errors.New("request is invalid")
-			//return nil, errors.New("not allowed module")
-		}
-
-		rsps := &pb.InvokeResponse{}
-
-		switch v.ModuleName {
-		case "transfer", "kernel": //判断手续费
-			//fee := uv.ledger.GetTransferFeeAmount() //只用创世时的配置金额
-			fee := uv.GetTransferFeeAmount() //可以更新的配置金额
-			amount, _ := strconv.ParseInt(v.Amount, 10, 64)
-			if amount < fee {
-				return nil, fmt.Errorf("need input fee %d", fee)
-			}
-			rsps.GasUsed = amount
-			return rsps, nil
-
-		case "tdpos", "proposal": //投票/撤票 或 提选人/换共识
-			if req.Initiator != string(v.Args["to"]) {
-				return nil, errors.New("only transfer to yourself")
-			}
-			return rsps, nil
-		}
-	}
-
-	//请求不被允许
-	if !allow {
-		return nil, errors.New("request is invalid")
-		//return nil, errors.New("not allowed module")
-	}
 
 	// transfer in contract
 	transContractName, transAmount, err := txn.ParseContractTransferRequest(req.Requests)
@@ -1024,6 +980,12 @@ func (uv *UtxoVM) PreExec(req *pb.InvokeRPCRequest, hd *global.XContext) (*pb.In
 		Responses:   responses,
 		UtxoInputs:  utxoInputs,
 		UtxoOutputs: utxoOutputs,
+	}
+
+	//所有操作都需要手续费
+	fee := uv.GetTransferFeeAmount()
+	if rsps.GasUsed < fee {
+		rsps.GasUsed = fee
 	}
 	return rsps, nil
 }
@@ -1454,43 +1416,23 @@ func (uv *UtxoVM) VerifyTxFee(tx *pb.Transaction) bool {
 		return true
 	}
 
-	//普通转账
-	//1.可以转账给别人，但必须有手续费
-	//2.没有手续费的收款人必须是自己
-	if tx.ContractRequests == nil {
-		//判断有无手续费
-		for _, v := range tx.TxOutputs {
-			if string(v.ToAddr) == FeePlaceholder {
-				//手续费价格匹配
-				amount := big.NewInt(0).SetBytes(v.Amount)
-				if amount.Int64() >= uv.GetTransferFeeAmount() {
-					return true
-				}
+	for _, output := range tx.TxOutputs {
+		switch string(output.ToAddr) {
+
+		//手续费
+		case FeePlaceholder:
+			//手续费价格匹配
+			fee := big.NewInt(0).SetBytes(output.Amount)
+			if fee.Int64() >= uv.GetTransferFeeAmount() {
+				return true
 			}
-		}
 
-		//没有手续费，判断收款人
-		for _, v := range tx.TxOutputs {
-			if string(v.ToAddr) != tx.Initiator {
-				return false
-			}
-			//todo 需要限制重复转账给自己
-
-		}
-		return true
-	}
-
-	//其他交易
-	//1.utxo输出是否为空
-	//2.交易是否支付了手续费
-	if tx.TxOutputs == nil {
-		return true
-	}
-	for _, v := range tx.TxOutputs {
-		if string(v.ToAddr) == FeePlaceholder {
-			return true
+		//空的收款人
+		case "":
+			return false
 		}
 	}
+
 	return false
 }
 
@@ -1498,7 +1440,7 @@ func (uv *UtxoVM) VerifyTxFee(tx *pb.Transaction) bool {
 func (uv *UtxoVM) VerifyTx(tx *pb.Transaction) (bool, error) {
 
 	if !uv.VerifyTxFee(tx) {
-		return false, errors.New("you not input fee or transfer address invalid")
+		return false, errors.New("you must input fee")
 	}
 
 	if uv.asyncMode || uv.asyncBlockMode {
